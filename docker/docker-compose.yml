@@ -1,0 +1,94 @@
+# Docker Compose for Building Power Efficiency GNN
+# ================================================
+
+version: '3.8'
+
+services:
+  # Main API service
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dgx
+    image: building-power-gnn:latest
+    container_name: building-power-gnn-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../data:/app/data
+      - ../checkpoints:/app/checkpoints
+      - ../logs:/app/logs
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/app/src
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Training service (run on-demand)
+  trainer:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dgx
+    image: building-power-gnn:latest
+    container_name: building-power-gnn-trainer
+    volumes:
+      - ../data:/app/data
+      - ../checkpoints:/app/checkpoints
+      - ../logs:/app/logs
+      - ../configs:/app/configs
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/app/src
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: ["python", "-m", "src.scripts.train", "--config", "/app/configs/dgx_spark_config.yaml"]
+    profiles:
+      - training
+
+  # Development service with hot reload
+  dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dgx
+    image: building-power-gnn:latest
+    container_name: building-power-gnn-dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../src:/app/src
+      - ../data:/app/data
+      - ../checkpoints:/app/checkpoints
+      - ../configs:/app/configs
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/app/src
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    profiles:
+      - dev
+
+networks:
+  default:
+    name: building-power-gnn-network

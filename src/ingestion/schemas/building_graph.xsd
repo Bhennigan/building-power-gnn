@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <!-- Root Element -->
+    <xs:element name="BuildingGraph">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Metadata" type="MetadataType" minOccurs="0"/>
+                <xs:element name="Nodes" type="NodesType"/>
+                <xs:element name="Edges" type="EdgesType"/>
+                <xs:element name="TimeSeries" type="TimeSeriesType" minOccurs="0"/>
+            </xs:sequence>
+            <xs:attribute name="version" type="xs:string" default="1.0"/>
+            <xs:attribute name="building_id" type="xs:string" use="required"/>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- Metadata Type -->
+    <xs:complexType name="MetadataType">
+        <xs:sequence>
+            <xs:element name="BuildingName" type="xs:string" minOccurs="0"/>
+            <xs:element name="Location" minOccurs="0">
+                <xs:complexType>
+                    <xs:attribute name="latitude" type="xs:decimal"/>
+                    <xs:attribute name="longitude" type="xs:decimal"/>
+                    <xs:attribute name="timezone" type="xs:string"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="TotalArea" type="xs:decimal" minOccurs="0"/>
+            <xs:element name="Floors" type="xs:positiveInteger" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- Node Types -->
+    <xs:simpleType name="NodeTypeEnum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="HVAC"/>
+            <xs:enumeration value="Lighting"/>
+            <xs:enumeration value="Sensor"/>
+            <xs:enumeration value="Room"/>
+            <xs:enumeration value="Meter"/>
+            <xs:enumeration value="WeatherStation"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Sensor Subtypes -->
+    <xs:simpleType name="SensorSubtypeEnum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="temperature"/>
+            <xs:enumeration value="humidity"/>
+            <xs:enumeration value="occupancy"/>
+            <xs:enumeration value="co2"/>
+            <xs:enumeration value="light"/>
+            <xs:enumeration value="power"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Edge Types -->
+    <xs:simpleType name="EdgeTypeEnum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="serves"/>
+            <xs:enumeration value="monitors"/>
+            <xs:enumeration value="feeds"/>
+            <xs:enumeration value="adjacent"/>
+            <xs:enumeration value="controls"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Nodes Container -->
+    <xs:complexType name="NodesType">
+        <xs:sequence>
+            <xs:element name="Node" type="NodeType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- Single Node -->
+    <xs:complexType name="NodeType">
+        <xs:sequence>
+            <xs:element name="Attributes" type="AttributesType" minOccurs="0"/>
+        </xs:sequence>
+        <xs:attribute name="id" type="xs:string" use="required"/>
+        <xs:attribute name="type" type="NodeTypeEnum" use="required"/>
+        <xs:attribute name="subtype" type="xs:string"/>
+        <xs:attribute name="zone" type="xs:string"/>
+        <xs:attribute name="floor" type="xs:string"/>
+        <!-- Type-specific attributes -->
+        <xs:attribute name="area_sqft" type="xs:decimal"/>
+        <xs:attribute name="capacity_kw" type="xs:decimal"/>
+        <xs:attribute name="wattage" type="xs:decimal"/>
+        <xs:attribute name="occupancy_max" type="xs:positiveInteger"/>
+    </xs:complexType>
+
+    <!-- Attributes Container -->
+    <xs:complexType name="AttributesType">
+        <xs:sequence>
+            <xs:element name="Attribute" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:attribute name="name" type="xs:string" use="required"/>
+                    <xs:attribute name="value" type="xs:string" use="required"/>
+                    <xs:attribute name="unit" type="xs:string"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- Edges Container -->
+    <xs:complexType name="EdgesType">
+        <xs:sequence>
+            <xs:element name="Edge" type="EdgeType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- Single Edge -->
+    <xs:complexType name="EdgeType">
+        <xs:attribute name="source" type="xs:string" use="required"/>
+        <xs:attribute name="target" type="xs:string" use="required"/>
+        <xs:attribute name="type" type="EdgeTypeEnum" use="required"/>
+        <xs:attribute name="weight" type="xs:decimal"/>
+        <xs:attribute name="bidirectional" type="xs:boolean" default="false"/>
+    </xs:complexType>
+
+    <!-- Time Series Container -->
+    <xs:complexType name="TimeSeriesType">
+        <xs:sequence>
+            <xs:element name="Reading" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:attribute name="node" type="xs:string" use="required"/>
+                    <xs:attribute name="timestamp" type="xs:dateTime" use="required"/>
+                    <xs:attribute name="value" type="xs:decimal" use="required"/>
+                    <xs:attribute name="metric" type="xs:string"/>
+                    <xs:attribute name="unit" type="xs:string"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

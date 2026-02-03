@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BuildingGraph version="1.0" building_id="office_building_001">
+    <Metadata>
+        <BuildingName>Downtown Office Complex</BuildingName>
+        <Location latitude="40.7128" longitude="-74.0060" timezone="America/New_York"/>
+        <TotalArea>75000</TotalArea>
+        <Floors>10</Floors>
+    </Metadata>
+    <Nodes>
+        <!-- HVAC Systems -->
+        <Node id="hvac_floor1_main" type="HVAC" zone="floor_1" floor="1" capacity_kw="100">
+            <Attributes>
+                <Attribute name="efficiency_rating" value="0.92"/>
+                <Attribute name="age_years" value="3"/>
+                <Attribute name="cop" value="3.5"/>
+                <Attribute name="variable_speed" value="true"/>
+            </Attributes>
+        </Node>
+        <Node id="hvac_floor2_main" type="HVAC" zone="floor_2" floor="2" capacity_kw="100">
+            <Attributes>
+                <Attribute name="efficiency_rating" value="0.90"/>
+                <Attribute name="age_years" value="5"/>
+                <Attribute name="cop" value="3.2"/>
+                <Attribute name="variable_speed" value="true"/>
+            </Attributes>
+        </Node>
+        <Node id="hvac_floor3_main" type="HVAC" zone="floor_3" floor="3" capacity_kw="75">
+            <Attributes>
+                <Attribute name="efficiency_rating" value="0.88"/>
+                <Attribute name="age_years" value="7"/>
+                <Attribute name="cop" value="3.0"/>
+                <Attribute name="variable_speed" value="false"/>
+            </Attributes>
+        </Node>
+
+        <!-- Lighting Systems -->
+        <Node id="lighting_floor1" type="Lighting" zone="floor_1" floor="1" wattage="5000">
+            <Attributes>
+                <Attribute name="type" value="LED"/>
+                <Attribute name="dimmable" value="true"/>
+                <Attribute name="occupancy_sensor" value="true"/>
+            </Attributes>
+        </Node>
+        <Node id="lighting_floor2" type="Lighting" zone="floor_2" floor="2" wattage="5000">
+            <Attributes>
+                <Attribute name="type" value="LED"/>
+                <Attribute name="dimmable" value="true"/>
+                <Attribute name="occupancy_sensor" value="true"/>
+            </Attributes>
+        </Node>
+        <Node id="lighting_floor3" type="Lighting" zone="floor_3" floor="3" wattage="4500">
+            <Attributes>
+                <Attribute name="type" value="fluorescent"/>
+                <Attribute name="dimmable" value="false"/>
+                <Attribute name="occupancy_sensor" value="false"/>
+            </Attributes>
+        </Node>
+
+        <!-- Temperature Sensors -->
+        <Node id="sensor_temp_f1_zone_a" type="Sensor" subtype="temperature" zone="floor_1" floor="1">
+            <Attributes>
+                <Attribute name="accuracy" value="0.1"/>
+                <Attribute name="sample_rate_hz" value="0.1"/>
+            </Attributes>
+        </Node>
+        <Node id="sensor_temp_f1_zone_b" type="Sensor" subtype="temperature" zone="floor_1" floor="1">
+            <Attributes>
+                <Attribute name="accuracy" value="0.1"/>
+                <Attribute name="sample_rate_hz" value="0.1"/>
+            </Attributes>
+        </Node>
+        <Node id="sensor_temp_f2_zone_a" type="Sensor" subtype="temperature" zone="floor_2" floor="2">
+            <Attributes>
+                <Attribute name="accuracy" value="0.1"/>
+                <Attribute name="sample_rate_hz" value="0.1"/>
+            </Attributes>
+        </Node>
+        <Node id="sensor_temp_f3_zone_a" type="Sensor" subtype="temperature" zone="floor_3" floor="3">
+            <Attributes>
+                <Attribute name="accuracy" value="0.1"/>
+                <Attribute name="sample_rate_hz" value="0.1"/>
+            </Attributes>
+        </Node>
+
+        <!-- Occupancy Sensors -->
+        <Node id="sensor_occ_f1" type="Sensor" subtype="occupancy" zone="floor_1" floor="1">
+            <Attributes>
+                <Attribute name="accuracy" value="0.95"/>
+                <Attribute name="sample_rate_hz" value="1.0"/>
+            </Attributes>
+        </Node>
+        <Node id="sensor_occ_f2" type="Sensor" subtype="occupancy" zone="floor_2" floor="2">
+            <Attributes>
+                <Attribute name="accuracy" value="0.95"/>
+                <Attribute name="sample_rate_hz" value="1.0"/>
+            </Attributes>
+        </Node>
+
+        <!-- Rooms/Spaces -->
+        <Node id="room_101" type="Room" zone="floor_1" floor="1" area_sqft="2000">
+            <Attributes>
+                <Attribute name="occupancy_max" value="40"/>
+                <Attribute name="ceiling_height" value="12"/>
+                <Attribute name="window_ratio" value="0.3"/>
+            </Attributes>
+        </Node>
+        <Node id="room_102" type="Room" zone="floor_1" floor="1" area_sqft="1500">
+            <Attributes>
+                <Attribute name="occupancy_max" value="30"/>
+                <Attribute name="ceiling_height" value="12"/>
+                <Attribute name="window_ratio" value="0.25"/>
+            </Attributes>
+        </Node>
+        <Node id="room_201" type="Room" zone="floor_2" floor="2" area_sqft="2500">
+            <Attributes>
+                <Attribute name="occupancy_max" value="50"/>
+                <Attribute name="ceiling_height" value="10"/>
+                <Attribute name="window_ratio" value="0.35"/>
+            </Attributes>
+        </Node>
+        <Node id="room_301" type="Room" zone="floor_3" floor="3" area_sqft="1800">
+            <Attributes>
+                <Attribute name="occupancy_max" value="35"/>
+                <Attribute name="ceiling_height" value="10"/>
+                <Attribute name="window_ratio" value="0.2"/>
+            </Attributes>
+        </Node>
+
+        <!-- Power Meters -->
+        <Node id="meter_main" type="Meter" subtype="electrical">
+            <Attributes>
+                <Attribute name="resolution_minutes" value="15"/>
+                <Attribute name="max_load_kw" value="500"/>
+            </Attributes>
+        </Node>
+        <Node id="meter_hvac" type="Meter" subtype="electrical">
+            <Attributes>
+                <Attribute name="resolution_minutes" value="15"/>
+                <Attribute name="max_load_kw" value="300"/>
+            </Attributes>
+        </Node>
+
+        <!-- Weather Station -->
+        <Node id="weather_station_1" type="WeatherStation">
+            <Attributes>
+                <Attribute name="latitude" value="40.7128"/>
+                <Attribute name="longitude" value="-74.0060"/>
+            </Attributes>
+        </Node>
+    </Nodes>
+    <Edges>
+        <!-- HVAC serves rooms -->
+        <Edge source="hvac_floor1_main" target="room_101" type="serves"/>
+        <Edge source="hvac_floor1_main" target="room_102" type="serves"/>
+        <Edge source="hvac_floor2_main" target="room_201" type="serves"/>
+        <Edge source="hvac_floor3_main" target="room_301" type="serves"/>
+
+        <!-- Lighting serves rooms -->
+        <Edge source="lighting_floor1" target="room_101" type="serves"/>
+        <Edge source="lighting_floor1" target="room_102" type="serves"/>
+        <Edge source="lighting_floor2" target="room_201" type="serves"/>
+        <Edge source="lighting_floor3" target="room_301" type="serves"/>
+
+        <!-- Sensors monitor rooms -->
+        <Edge source="sensor_temp_f1_zone_a" target="room_101" type="monitors"/>
+        <Edge source="sensor_temp_f1_zone_b" target="room_102" type="monitors"/>
+        <Edge source="sensor_temp_f2_zone_a" target="room_201" type="monitors"/>
+        <Edge source="sensor_temp_f3_zone_a" target="room_301" type="monitors"/>
+        <Edge source="sensor_occ_f1" target="room_101" type="monitors"/>
+        <Edge source="sensor_occ_f1" target="room_102" type="monitors"/>
+        <Edge source="sensor_occ_f2" target="room_201" type="monitors"/>
+
+        <!-- Sensors control HVAC -->
+        <Edge source="sensor_temp_f1_zone_a" target="hvac_floor1_main" type="controls"/>
+        <Edge source="sensor_temp_f2_zone_a" target="hvac_floor2_main" type="controls"/>
+        <Edge source="sensor_temp_f3_zone_a" target="hvac_floor3_main" type="controls"/>
+
+        <!-- Meters feed equipment -->
+        <Edge source="meter_hvac" target="hvac_floor1_main" type="feeds"/>
+        <Edge source="meter_hvac" target="hvac_floor2_main" type="feeds"/>
+        <Edge source="meter_hvac" target="hvac_floor3_main" type="feeds"/>
+        <Edge source="meter_main" target="lighting_floor1" type="feeds"/>
+        <Edge source="meter_main" target="lighting_floor2" type="feeds"/>
+        <Edge source="meter_main" target="lighting_floor3" type="feeds"/>
+
+        <!-- Adjacent rooms -->
+        <Edge source="room_101" target="room_102" type="adjacent" bidirectional="true"/>
+    </Edges>
+    <TimeSeries>
+        <!-- Temperature readings -->
+        <Reading node="sensor_temp_f1_zone_a" timestamp="2024-01-15T08:00:00" value="68.5" metric="temperature" unit="F"/>
+        <Reading node="sensor_temp_f1_zone_a" timestamp="2024-01-15T09:00:00" value="70.2" metric="temperature" unit="F"/>
+        <Reading node="sensor_temp_f1_zone_a" timestamp="2024-01-15T10:00:00" value="71.8" metric="temperature" unit="F"/>
+        <Reading node="sensor_temp_f1_zone_a" timestamp="2024-01-15T11:00:00" value="72.5" metric="temperature" unit="F"/>
+        <Reading node="sensor_temp_f1_zone_a" timestamp="2024-01-15T12:00:00" value="73.0" metric="temperature" unit="F"/>
+
+        <Reading node="sensor_temp_f2_zone_a" timestamp="2024-01-15T08:00:00" value="67.0" metric="temperature" unit="F"/>
+        <Reading node="sensor_temp_f2_zone_a" timestamp="2024-01-15T09:00:00" value="69.5" metric="temperature" unit="F"/>
+        <Reading node="sensor_temp_f2_zone_a" timestamp="2024-01-15T10:00:00" value="71.0" metric="temperature" unit="F"/>
+        <Reading node="sensor_temp_f2_zone_a" timestamp="2024-01-15T11:00:00" value="72.0" metric="temperature" unit="F"/>
+        <Reading node="sensor_temp_f2_zone_a" timestamp="2024-01-15T12:00:00" value="72.8" metric="temperature" unit="F"/>
+
+        <!-- Occupancy readings -->
+        <Reading node="sensor_occ_f1" timestamp="2024-01-15T08:00:00" value="15" metric="occupancy"/>
+        <Reading node="sensor_occ_f1" timestamp="2024-01-15T09:00:00" value="35" metric="occupancy"/>
+        <Reading node="sensor_occ_f1" timestamp="2024-01-15T10:00:00" value="52" metric="occupancy"/>
+        <Reading node="sensor_occ_f1" timestamp="2024-01-15T11:00:00" value="58" metric="occupancy"/>
+        <Reading node="sensor_occ_f1" timestamp="2024-01-15T12:00:00" value="45" metric="occupancy"/>
+
+        <!-- HVAC power consumption -->
+        <Reading node="hvac_floor1_main" timestamp="2024-01-15T08:00:00" value="45.2" metric="power" unit="kW"/>
+        <Reading node="hvac_floor1_main" timestamp="2024-01-15T09:00:00" value="62.5" metric="power" unit="kW"/>
+        <Reading node="hvac_floor1_main" timestamp="2024-01-15T10:00:00" value="78.3" metric="power" unit="kW"/>
+        <Reading node="hvac_floor1_main" timestamp="2024-01-15T11:00:00" value="85.1" metric="power" unit="kW"/>
+        <Reading node="hvac_floor1_main" timestamp="2024-01-15T12:00:00" value="82.0" metric="power" unit="kW"/>
+
+        <Reading node="hvac_floor2_main" timestamp="2024-01-15T08:00:00" value="42.0" metric="power" unit="kW"/>
+        <Reading node="hvac_floor2_main" timestamp="2024-01-15T09:00:00" value="58.5" metric="power" unit="kW"/>
+        <Reading node="hvac_floor2_main" timestamp="2024-01-15T10:00:00" value="72.0" metric="power" unit="kW"/>
+        <Reading node="hvac_floor2_main" timestamp="2024-01-15T11:00:00" value="80.5" metric="power" unit="kW"/>
+        <Reading node="hvac_floor2_main" timestamp="2024-01-15T12:00:00" value="78.2" metric="power" unit="kW"/>
+
+        <!-- Meter readings -->
+        <Reading node="meter_main" timestamp="2024-01-15T08:00:00" value="125.5" metric="power" unit="kW"/>
+        <Reading node="meter_main" timestamp="2024-01-15T09:00:00" value="185.2" metric="power" unit="kW"/>
+        <Reading node="meter_main" timestamp="2024-01-15T10:00:00" value="232.8" metric="power" unit="kW"/>
+        <Reading node="meter_main" timestamp="2024-01-15T11:00:00" value="258.3" metric="power" unit="kW"/>
+        <Reading node="meter_main" timestamp="2024-01-15T12:00:00" value="245.0" metric="power" unit="kW"/>
+    </TimeSeries>
+</BuildingGraph>

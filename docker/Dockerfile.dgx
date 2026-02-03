@@ -1,0 +1,70 @@
+# Building Power Efficiency GNN - DGX Spark Optimized Docker Image
+# ================================================================
+# Based on NVIDIA NGC PyTorch container for optimal DGX performance
+
+# Use NGC PyTorch container with CUDA support
+FROM nvcr.io/nvidia/pytorch:24.01-py3
+
+# Set working directory
+WORKDIR /app
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/src \
+    CUDA_DEVICE_ORDER=PCI_BUS_ID
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies
+# Note: torch is already installed in NGC container
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+    torch-geometric \
+    dgl -f https://data.dgl.ai/wheels/cu121/repo.html \
+    pandas>=2.0.0 \
+    numpy>=1.24.0 \
+    lxml>=4.9.0 \
+    networkx>=3.0 \
+    fastapi>=0.100.0 \
+    "uvicorn[standard]>=0.23.0" \
+    pydantic>=2.0.0 \
+    python-multipart>=0.0.6 \
+    websockets>=11.0 \
+    tqdm>=4.65.0 \
+    pyyaml>=6.0
+
+# Install PyTorch Geometric dependencies
+RUN pip install --no-cache-dir pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv \
+    -f https://data.pyg.org/whl/torch-2.1.0+cu121.html
+
+# Copy application code
+COPY src/ ./src/
+COPY configs/ ./configs/
+
+# Create directories for data and checkpoints
+RUN mkdir -p /app/data /app/checkpoints /app/logs
+
+# Set up volumes for persistent data
+VOLUME ["/app/data", "/app/checkpoints", "/app/logs"]
+
+# Expose API port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Default command: run API server
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Alternative commands:
+# Training: docker run ... python -m src.scripts.train
+# Inference: docker run ... python -m src.scripts.inference

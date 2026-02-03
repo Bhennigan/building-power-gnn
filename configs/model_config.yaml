@@ -1,0 +1,88 @@
+# Building Power GNN Model Configuration
+# ========================================
+
+model:
+  # Architecture
+  hidden_dim: 128
+  num_gnn_layers: 3
+  temporal_dim: 64
+  temporal_input_dim: 5
+  num_temporal_layers: 2
+  conv_type: "sage"  # Options: sage, gat
+  heads: 4  # For GAT convolution
+  dropout: 0.1
+  output_dim: 1
+
+  # Node feature dimensions (must match encoder output)
+  node_feature_dims:
+    hvac: 8
+    lighting: 6
+    sensor: 5
+    room: 7
+    meter: 4
+    weatherstation: 3
+
+  # Edge types in building graph
+  edge_types:
+    - ["hvac", "serves", "room"]
+    - ["sensor", "monitors", "room"]
+    - ["meter", "feeds", "hvac"]
+    - ["room", "adjacent", "room"]
+    - ["sensor", "controls", "hvac"]
+    - ["lighting", "serves", "room"]
+    - ["meter", "feeds", "lighting"]
+
+training:
+  # Optimization
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  batch_size: 64
+  num_epochs: 100
+  warmup_epochs: 5
+
+  # Scheduler
+  scheduler_type: "cosine"  # Options: cosine, onecycle
+  min_lr: 0.000001
+
+  # Regularization
+  gradient_clip: 1.0
+  accumulation_steps: 1
+
+  # Early stopping
+  patience: 10
+  min_delta: 0.0001
+
+  # Checkpointing
+  save_every: 5
+  checkpoint_dir: "checkpoints"
+
+data:
+  # Temporal features
+  window_size: 168  # 1 week of hourly data
+  aggregation_interval_hours: 1
+
+  # Train/val/test split
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+
+  # Augmentation
+  noise_std: 0.01
+  edge_dropout: 0.1
+
+inference:
+  # Prediction
+  default_horizon_hours: 24
+  max_horizon_hours: 168
+
+  # Anomaly detection
+  anomaly_threshold: 0.5
+  confidence_level: 0.95
+
+  # Batch processing
+  max_batch_size: 256
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  log_dir: "logs"

@@ -1,0 +1,120 @@
+# DGX Spark (Grace Hopper) Optimized Configuration
+# =================================================
+# NVIDIA DGX Spark: Grace Hopper Superchip
+# - 72 ARM Neoverse V2 cores
+# - 72GB HBM3 GPU memory
+# - NVLink-C2C interconnect
+
+hardware:
+  device: "cuda"
+  gpu_memory_gb: 72
+  cpu_cores: 72
+
+  # CUDA settings
+  cudnn_benchmark: true
+  cudnn_deterministic: false
+
+  # Memory management
+  empty_cache_frequency: 100  # Empty CUDA cache every N batches
+  pin_memory: true
+  non_blocking: true
+
+dataloader:
+  # Optimized for Grace Hopper memory bandwidth
+  num_workers: 8
+  prefetch_factor: 4
+  persistent_workers: true
+
+  # Large batches fit in HBM3
+  batch_size: 128
+
+  # Graph-specific batching
+  follow_batch: ["x"]
+
+model:
+  # Larger model for DGX capacity
+  hidden_dim: 256
+  num_gnn_layers: 4
+  temporal_dim: 128
+
+  # Mixed precision training
+  use_amp: true
+  amp_dtype: "float16"  # or bfloat16 for Grace Hopper
+
+  # Gradient checkpointing for very large models
+  gradient_checkpointing: false
+
+training:
+  # Optimized batch size for HBM3
+  batch_size: 128
+
+  # Gradient accumulation for effective larger batches
+  accumulation_steps: 2
+  effective_batch_size: 256
+
+  # Learning rate scaled for larger batch
+  learning_rate: 0.002
+
+  # Warmup for stability
+  warmup_epochs: 10
+
+  # Mixed precision
+  use_amp: true
+
+optimization:
+  # Optimizer settings for large batches
+  optimizer: "adamw"
+  betas: [0.9, 0.999]
+  eps: 0.00000001
+
+  # NVIDIA-specific optimizations
+  use_fused_adam: true  # Requires apex
+
+  # Gradient clipping
+  max_grad_norm: 1.0
+
+distributed:
+  # Single GPU on DGX Spark
+  world_size: 1
+
+  # For multi-GPU setups
+  backend: "nccl"
+  find_unused_parameters: false
+
+memory:
+  # Memory optimization strategies
+  gradient_checkpointing: false  # Enable for very large models
+
+  # Clear memory periodically
+  empty_cache_frequency: 50
+
+  # Use memory-efficient attention (if applicable)
+  use_flash_attention: true
+
+profiling:
+  # NVIDIA Nsight integration
+  enable_profiling: false
+  profile_batches: 10
+  trace_output_dir: "profiles"
+
+inference:
+  # TensorRT optimization (if available)
+  use_tensorrt: false
+  tensorrt_precision: "fp16"
+
+  # Batch inference settings
+  inference_batch_size: 256
+
+  # Async inference
+  async_inference: true
+  max_concurrent_requests: 4
+
+monitoring:
+  # GPU utilization monitoring
+  log_gpu_memory: true
+  log_gpu_utilization: true
+  log_frequency: 100  # Log every N batches
+
+  # Performance metrics
+  measure_throughput: true
+  measure_latency: true
