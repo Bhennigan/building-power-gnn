@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PowerGraph AI{% endblock %}</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- htmx -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom styles -->
+    <style>
+        [x-cloak] { display: none !important; }
+        .htmx-request { opacity: 0.5; }
+        .htmx-indicator { display: none; }
+        .htmx-request .htmx-indicator { display: inline-block; }
+    </style>
+
+    {% block head %}{% endblock %}
+</head>
+<body class="h-full" x-data="{ sidebarOpen: false }">
+    {% block body %}
+    <div class="min-h-full">
+        {% if user %}
+        <!-- Navigation -->
+        <nav class="bg-indigo-600">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <span class="text-white text-xl font-bold">PowerGraph AI</span>
+                        </div>
+                        <div class="hidden md:block">
+                            <div class="ml-10 flex items-baseline space-x-4">
+                                <a href="/dashboard" class="{% if active_page == 'dashboard' %}bg-indigo-700 text-white{% else %}text-indigo-200 hover:bg-indigo-500 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Dashboard</a>
+                                <a href="/buildings" class="{% if active_page == 'buildings' %}bg-indigo-700 text-white{% else %}text-indigo-200 hover:bg-indigo-500 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Buildings</a>
+                                <a href="/upload" class="{% if active_page == 'upload' %}bg-indigo-700 text-white{% else %}text-indigo-200 hover:bg-indigo-500 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Upload Data</a>
+                                <a href="/insights" class="{% if active_page == 'insights' %}bg-indigo-700 text-white{% else %}text-indigo-200 hover:bg-indigo-500 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Insights</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hidden md:block">
+                        <div class="ml-4 flex items-center md:ml-6">
+                            <span class="text-indigo-200 mr-4">{{ user.email }}</span>
+                            <a href="/logout" class="text-indigo-200 hover:text-white text-sm">Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        {% endif %}
+
+        <!-- Main content -->
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-white border-t mt-auto">
+            <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+                <p class="text-center text-sm text-gray-500">
+                    PowerGraph AI - Intelligent Building Energy Management
+                </p>
+            </div>
+        </footer>
+    </div>
+    {% endblock %}
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

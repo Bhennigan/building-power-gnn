@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Data - PowerGraph AI{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8" x-data="uploadForm()">
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="min-w-0 flex-1">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">
+                Upload Building Data
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Import your building infrastructure data to start analyzing energy efficiency
+            </p>
+        </div>
+    </div>
+
+    <!-- Step Indicator -->
+    <nav aria-label="Progress" class="mb-8">
+        <ol class="flex items-center">
+            <li class="relative pr-8 sm:pr-20" :class="step >= 1 ? 'text-indigo-600' : 'text-gray-500'">
+                <div class="flex items-center">
+                    <span class="h-8 w-8 flex items-center justify-center rounded-full" :class="step >= 1 ? 'bg-indigo-600 text-white' : 'bg-gray-200'">1</span>
+                    <span class="ml-3 text-sm font-medium">Select Building</span>
+                </div>
+            </li>
+            <li class="relative pr-8 sm:pr-20" :class="step >= 2 ? 'text-indigo-600' : 'text-gray-500'">
+                <div class="flex items-center">
+                    <span class="h-8 w-8 flex items-center justify-center rounded-full" :class="step >= 2 ? 'bg-indigo-600 text-white' : 'bg-gray-200'">2</span>
+                    <span class="ml-3 text-sm font-medium">Upload Files</span>
+                </div>
+            </li>
+            <li class="relative" :class="step >= 3 ? 'text-indigo-600' : 'text-gray-500'">
+                <div class="flex items-center">
+                    <span class="h-8 w-8 flex items-center justify-center rounded-full" :class="step >= 3 ? 'bg-indigo-600 text-white' : 'bg-gray-200'">3</span>
+                    <span class="ml-3 text-sm font-medium">Review & Train</span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Step 1: Select/Create Building -->
+    <div x-show="step === 1" class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Select or Create Building</h3>
+
+        {% if buildings %}
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Existing Buildings</label>
+            <select x-model="selectedBuilding" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md">
+                <option value="">-- Create New Building --</option>
+                {% for building in buildings %}
+                <option value="{{ building.id }}">{{ building.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        <div x-show="!selectedBuilding" class="border-t pt-6">
+            <h4 class="text-md font-medium text-gray-900 mb-4">Create New Building</h4>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Building Name *</label>
+                    <input x-model="newBuilding.name" type="text" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Building Type</label>
+                    <select x-model="newBuilding.type" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="office">Office</option>
+                        <option value="warehouse">Warehouse</option>
+                        <option value="retail">Retail</option>
+                        <option value="hospital">Hospital</option>
+                        <option value="school">School</option>
+                        <option value="residential">Residential</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700">Address</label>
+                    <input x-model="newBuilding.address" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Total Area (sq ft)</label>
+                    <input x-model="newBuilding.area" type="number" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Number of Floors</label>
+                    <input x-model="newBuilding.floors" type="number" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+            <button @click="goToStep2()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                Continue
+            </button>
+        </div>
+    </div>
+
+    <!-- Step 2: Upload Files -->
+    <div x-show="step === 2" x-cloak class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Upload Data Files</h3>
+
+        <div class="mb-6">
+            <div class="flex space-x-4 mb-4">
+                <a href="/api/v1/templates/nodes" class="text-sm text-indigo-600 hover:text-indigo-800">Download Nodes Template</a>
+                <a href="/api/v1/templates/edges" class="text-sm text-indigo-600 hover:text-indigo-800">Download Edges Template</a>
+                <a href="/api/v1/templates/readings" class="text-sm text-indigo-600 hover:text-indigo-800">Download Readings Template</a>
+            </div>
+        </div>
+
+        <!-- File Upload Zones -->
+        <div class="space-y-6">
+            <!-- Nodes -->
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6"
+                 :class="{'border-green-400 bg-green-50': files.nodes}"
+                 @dragover.prevent="$el.classList.add('border-indigo-400')"
+                 @dragleave.prevent="$el.classList.remove('border-indigo-400')"
+                 @drop.prevent="handleDrop($event, 'nodes')">
+                <div class="text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <p class="mt-2 text-sm text-gray-600">
+                        <template x-if="!files.nodes">
+                            <span>Drag & drop <strong>Nodes</strong> file (CSV/Excel) or
+                                <label class="text-indigo-600 hover:text-indigo-500 cursor-pointer">browse
+                                    <input type="file" class="hidden" accept=".csv,.xlsx,.xls" @change="handleFile($event, 'nodes')">
+                                </label>
+                            </span>
+                        </template>
+                        <template x-if="files.nodes">
+                            <span class="text-green-600">✓ <span x-text="files.nodes.name"></span></span>
+                        </template>
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">HVAC units, sensors, rooms, meters</p>
+                </div>
+            </div>
+
+            <!-- Edges -->
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6"
+                 :class="{'border-green-400 bg-green-50': files.edges}"
+                 @dragover.prevent="$el.classList.add('border-indigo-400')"
+                 @dragleave.prevent="$el.classList.remove('border-indigo-400')"
+                 @drop.prevent="handleDrop($event, 'edges')">
+                <div class="text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                    </svg>
+                    <p class="mt-2 text-sm text-gray-600">
+                        <template x-if="!files.edges">
+                            <span>Drag & drop <strong>Edges</strong> file (CSV/Excel) or
+                                <label class="text-indigo-600 hover:text-indigo-500 cursor-pointer">browse
+                                    <input type="file" class="hidden" accept=".csv,.xlsx,.xls" @change="handleFile($event, 'edges')">
+                                </label>
+                            </span>
+                        </template>
+                        <template x-if="files.edges">
+                            <span class="text-green-600">✓ <span x-text="files.edges.name"></span></span>
+                        </template>
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">Connections between equipment</p>
+                </div>
+            </div>
+
+            <!-- Readings (Optional) -->
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6"
+                 :class="{'border-green-400 bg-green-50': files.readings}"
+                 @dragover.prevent="$el.classList.add('border-indigo-400')"
+                 @dragleave.prevent="$el.classList.remove('border-indigo-400')"
+                 @drop.prevent="handleDrop($event, 'readings')">
+                <div class="text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    <p class="mt-2 text-sm text-gray-600">
+                        <template x-if="!files.readings">
+                            <span>Drag & drop <strong>Readings</strong> file (CSV/Excel) or
+                                <label class="text-indigo-600 hover:text-indigo-500 cursor-pointer">browse
+                                    <input type="file" class="hidden" accept=".csv,.xlsx,.xls" @change="handleFile($event, 'readings')">
+                                </label>
+                            </span>
+                        </template>
+                        <template x-if="files.readings">
+                            <span class="text-green-600">✓ <span x-text="files.readings.name"></span></span>
+                        </template>
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">Historical sensor data (optional)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 flex justify-between">
+            <button @click="step = 1" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Back
+            </button>
+            <button @click="uploadFiles()" :disabled="!files.nodes || uploading"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50">
+                <span x-show="!uploading">Upload & Continue</span>
+                <span x-show="uploading" x-cloak>Uploading...</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Step 3: Review & Train -->
+    <div x-show="step === 3" x-cloak class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Review & Train Model</h3>
+
+        <!-- Upload Summary -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <h4 class="font-medium text-gray-900 mb-2">Upload Summary</h4>
+            <div class="grid grid-cols-3 gap-4 text-center">
+                <div>
+                    <p class="text-2xl font-bold text-indigo-600" x-text="uploadResult.nodes_added || 0"></p>
+                    <p class="text-sm text-gray-500">Nodes</p>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-indigo-600" x-text="uploadResult.edges_added || 0"></p>
+                    <p class="text-sm text-gray-500">Edges</p>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-indigo-600" x-text="uploadResult.readings_added || 0"></p>
+                    <p class="text-sm text-gray-500">Readings</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warnings -->
+        <template x-if="uploadResult.warnings && uploadResult.warnings.length > 0">
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <h4 class="font-medium text-yellow-800 mb-2">Warnings</h4>
+                <ul class="text-sm text-yellow-700 list-disc list-inside">
+                    <template x-for="warning in uploadResult.warnings">
+                        <li x-text="warning"></li>
+                    </template>
+                </ul>
+            </div>
+        </template>
+
+        <!-- Train Model -->
+        <div class="border-t pt-6">
+            <h4 class="font-medium text-gray-900 mb-2">Train AI Model</h4>
+            <p class="text-sm text-gray-500 mb-4">
+                Train a custom model on your building data to enable power predictions and anomaly detection.
+            </p>
+
+            <div x-show="!training && !trained">
+                <button @click="trainModel()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                    Start Training
+                </button>
+                <span class="ml-4 text-sm text-gray-500">or</span>
+                <a href="/dashboard" class="ml-4 text-sm text-indigo-600 hover:text-indigo-800">Skip for now</a>
+            </div>
+
+            <div x-show="training" x-cloak class="flex items-center">
+                <svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <span class="ml-2 text-gray-600">Training model... This may take a few minutes.</span>
+            </div>
+
+            <div x-show="trained" x-cloak class="flex items-center text-green-600">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                <span class="ml-2">Model trained successfully!</span>
+            </div>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+            <a href="/dashboard" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                Go to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function uploadForm() {
+    return {
+        step: 1,
+        selectedBuilding: '',
+        newBuilding: {
+            name: '',
+            type: 'office',
+            address: '',
+            area: '',
+            floors: ''
+        },
+        files: {
+            nodes: null,
+            edges: null,
+            readings: null
+        },
+        uploading: false,
+        uploadResult: {},
+        training: false,
+        trained: false,
+        buildingId: null,
+
+        handleFile(event, type) {
+            this.files[type] = event.target.files[0];
+        },
+
+        handleDrop(event, type) {
+            event.target.classList.remove('border-indigo-400');
+            const file = event.dataTransfer.files[0];
+            if (file) this.files[type] = file;
+        },
+
+        async goToStep2() {
+            if (this.selectedBuilding) {
+                this.buildingId = this.selectedBuilding;
+                this.step = 2;
+            } else if (this.newBuilding.name) {
+                // Create new building
+                const response = await fetch('/api/v1/buildings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: this.newBuilding.name,
+                        building_type: this.newBuilding.type,
+                        address: this.newBuilding.address,
+                        total_area_sqft: this.newBuilding.area || null,
+                        floors: this.newBuilding.floors || null
+                    })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    this.buildingId = data.id;
+                    this.step = 2;
+                } else {
+                    alert(data.detail || 'Failed to create building');
+                }
+            } else {
+                alert('Please select or create a building');
+            }
+        },
+
+        async uploadFiles() {
+            this.uploading = true;
+            this.uploadResult = { nodes_added: 0, edges_added: 0, readings_added: 0, warnings: [] };
+
+            try {
+                for (const [type, file] of Object.entries(this.files)) {
+                    if (!file) continue;
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('data_type', type);
+
+                    const response = await fetch(`/api/v1/buildings/${this.buildingId}/upload`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        this.uploadResult.nodes_added += data.nodes_added || 0;
+                        this.uploadResult.edges_added += data.edges_added || 0;
+                        this.uploadResult.readings_added += data.readings_added || 0;
+                        if (data.warnings) {
+                            this.uploadResult.warnings.push(...data.warnings);
+                        }
+                    } else {
+                        alert(`Failed to upload ${type}: ${data.detail}`);
+                    }
+                }
+
+                this.step = 3;
+            } catch (e) {
+                alert('Upload failed: ' + e.message);
+            } finally {
+                this.uploading = false;
+            }
+        },
+
+        async trainModel() {
+            this.training = true;
+            try {
+                const response = await fetch(`/api/v1/buildings/${this.buildingId}/train`, {
+                    method: 'POST'
+                });
+                if (response.ok) {
+                    this.trained = true;
+                } else {
+                    const data = await response.json();
+                    alert('Training failed: ' + (data.detail || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Training failed: ' + e.message);
+            } finally {
+                this.training = false;
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

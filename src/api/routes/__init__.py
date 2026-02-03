@@ -1,5 +1,5 @@
 """API routes module."""
 
-from . import ingest, predict
+from . import ingest, predict, ui, buildings
 
-__all__ = ["ingest", "predict"]
+__all__ = ["ingest", "predict", "ui", "buildings"]

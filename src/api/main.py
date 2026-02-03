@@ -10,10 +10,19 @@ import logging
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import torch
 
+from fastapi.responses import StreamingResponse
+from io import StringIO
+
 from .routes import ingest, predict
+from .routes.ui import router as ui_router
+from .routes.buildings import router as buildings_router
 from .websocket import router as ws_router
+from ..auth.routes import router as auth_router
+from ..db.session import engine, Base
+from ..ingestion.csv_parser import generate_template_csv
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +53,10 @@ async def lifespan(app: FastAPI):
     global _model, _graph_builder, _feature_store
 
     logger.info("Starting Building Power GNN API...")
+
+    # Create database tables
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables initialized")
 
     # Initialize components
     from ..graph import GraphBuilder, FeatureStore
@@ -105,9 +118,12 @@ def create_app() -> FastAPI:
     )
 
     # Include routers
+    app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
+    app.include_router(buildings_router, prefix="/api/v1/buildings", tags=["Buildings"])
     app.include_router(ingest.router, prefix="/api/v1/ingest", tags=["Ingestion"])
     app.include_router(predict.router, prefix="/api/v1/predict", tags=["Prediction"])
     app.include_router(ws_router, prefix="/ws", tags=["WebSocket"])
+    app.include_router(ui_router, tags=["UI"])
 
     @app.get("/health")
     async def health_check():
@@ -118,15 +134,18 @@ def create_app() -> FastAPI:
             "device": "cuda" if torch.cuda.is_available() else "cpu",
         }
 
-    @app.get("/")
-    async def root():
-        """Root endpoint with API info."""
-        return {
-            "name": "Building Power Efficiency GNN API",
-            "version": "1.0.0",
-            "docs": "/docs",
-            "health": "/health",
-        }
+    @app.get("/api/v1/templates/{data_type}")
+    async def download_template(data_type: str):
+        """Download a CSV template for data upload."""
+        if data_type not in ["nodes", "edges", "readings"]:
+            raise HTTPException(status_code=400, detail="Invalid data type")
+
+        content = generate_template_csv(data_type)
+        return StreamingResponse(
+            StringIO(content),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={data_type}_template.csv"}
+        )
 
     return app
 

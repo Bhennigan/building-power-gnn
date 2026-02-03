@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Buildings - PowerGraph AI{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="min-w-0 flex-1">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">
+                Buildings
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Manage your building infrastructure
+            </p>
+        </div>
+        <div class="mt-4 flex md:ml-4 md:mt-0">
+            <a href="/upload" class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                + Add Building
+            </a>
+        </div>
+    </div>
+
+    {% if buildings %}
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {% for building in buildings %}
+        <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">{{ building.name }}</h3>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                        {{ building.building_type or 'Unknown' }}
+                    </span>
+                </div>
+
+                <p class="text-sm text-gray-500 mb-4">
+                    {{ building.address or 'No address' }}
+                </p>
+
+                <div class="grid grid-cols-3 gap-4 text-center border-t pt-4">
+                    <div>
+                        <p class="text-xl font-semibold text-gray-900">{{ building.node_count }}</p>
+                        <p class="text-xs text-gray-500">Nodes</p>
+                    </div>
+                    <div>
+                        <p class="text-xl font-semibold text-gray-900">{{ building.edge_count }}</p>
+                        <p class="text-xs text-gray-500">Edges</p>
+                    </div>
+                    <div>
+                        <p class="text-xl font-semibold text-gray-900">{{ building.reading_count }}</p>
+                        <p class="text-xs text-gray-500">Readings</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex space-x-3">
+                    <a href="/buildings/{{ building.id }}" class="flex-1 inline-flex justify-center items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        View Details
+                    </a>
+                    <a href="/upload?building={{ building.id }}" class="flex-1 inline-flex justify-center items-center px-3 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                        Upload Data
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
+        <h3 class="mt-2 text-lg font-medium text-gray-900">No buildings yet</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by uploading your building data.</p>
+        <div class="mt-6">
+            <a href="/upload" class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                + Upload Building Data
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

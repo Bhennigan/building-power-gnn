@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Login - PowerGraph AI{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <h1 class="text-center text-4xl font-extrabold text-white">PowerGraph AI</h1>
+            <p class="mt-2 text-center text-indigo-200">Intelligent Building Energy Management</p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-2xl p-8" x-data="{ tab: 'login', loading: false, error: '' }">
+            <!-- Tabs -->
+            <div class="flex border-b border-gray-200 mb-6">
+                <button @click="tab = 'login'" :class="tab === 'login' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'" class="flex-1 py-2 px-1 text-center border-b-2 font-medium text-sm">
+                    Sign In
+                </button>
+                <button @click="tab = 'register'" :class="tab === 'register' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'" class="flex-1 py-2 px-1 text-center border-b-2 font-medium text-sm">
+                    Register
+                </button>
+            </div>
+
+            <!-- Error message -->
+            <div x-show="error" x-cloak class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p class="text-sm text-red-600" x-text="error"></p>
+            </div>
+
+            <!-- Login Form -->
+            <form x-show="tab === 'login'" @submit.prevent="
+                loading = true;
+                error = '';
+                fetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: $refs.loginEmail.value,
+                        password: $refs.loginPassword.value
+                    })
+                })
+                .then(r => r.json().then(data => ({ ok: r.ok, data })))
+                .then(({ ok, data }) => {
+                    loading = false;
+                    if (ok) {
+                        window.location.href = '/dashboard';
+                    } else {
+                        error = data.detail || 'Login failed';
+                    }
+                })
+                .catch(e => {
+                    loading = false;
+                    error = 'Network error. Please try again.';
+                });
+            " class="space-y-6">
+                <div>
+                    <label for="login-email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input x-ref="loginEmail" id="login-email" name="email" type="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label for="login-password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input x-ref="loginPassword" id="login-password" name="password" type="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <button type="submit" :disabled="loading" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
+                    <span x-show="!loading">Sign In</span>
+                    <span x-show="loading" x-cloak>Signing in...</span>
+                </button>
+            </form>
+
+            <!-- Register Form -->
+            <form x-show="tab === 'register'" x-cloak @submit.prevent="
+                loading = true;
+                error = '';
+                fetch('/api/v1/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: $refs.regEmail.value,
+                        password: $refs.regPassword.value,
+                        name: $refs.regName.value,
+                        company_name: $refs.regCompany.value
+                    })
+                })
+                .then(r => r.json().then(data => ({ ok: r.ok, data })))
+                .then(({ ok, data }) => {
+                    loading = false;
+                    if (ok) {
+                        window.location.href = '/dashboard';
+                    } else {
+                        error = data.detail || 'Registration failed';
+                    }
+                })
+                .catch(e => {
+                    loading = false;
+                    error = 'Network error. Please try again.';
+                });
+            " class="space-y-6">
+                <div>
+                    <label for="reg-name" class="block text-sm font-medium text-gray-700">Your Name</label>
+                    <input x-ref="regName" id="reg-name" name="name" type="text" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label for="reg-company" class="block text-sm font-medium text-gray-700">Company Name</label>
+                    <input x-ref="regCompany" id="reg-company" name="company" type="text" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label for="reg-email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input x-ref="regEmail" id="reg-email" name="email" type="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label for="reg-password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input x-ref="regPassword" id="reg-password" name="password" type="password" required minlength="8" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    <p class="mt-1 text-xs text-gray-500">Minimum 8 characters</p>
+                </div>
+
+                <button type="submit" :disabled="loading" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
+                    <span x-show="!loading">Create Account</span>
+                    <span x-show="loading" x-cloak>Creating account...</span>
+                </button>
+            </form>
+        </div>
+
+        <p class="text-center text-sm text-indigo-200">
+            Reduce energy costs by up to 30% with AI-powered insights
+        </p>
+    </div>
+</div>
+{% endblock %}

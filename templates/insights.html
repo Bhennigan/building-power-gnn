@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Insights - PowerGraph AI{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="min-w-0 flex-1">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">
+                AI Insights
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Power predictions and anomaly detection powered by Graph Neural Networks
+            </p>
+        </div>
+    </div>
+
+    {% if not buildings %}
+    <!-- No Buildings -->
+    <div class="text-center py-16 bg-white rounded-lg shadow">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        <h3 class="mt-2 text-lg font-medium text-gray-900">No data available</h3>
+        <p class="mt-1 text-sm text-gray-500">Upload building data to start getting AI-powered insights.</p>
+        <div class="mt-6">
+            <a href="/upload" class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                Upload Data
+            </a>
+        </div>
+    </div>
+    {% else %}
+
+    <!-- Model Status -->
+    <div class="bg-white shadow rounded-lg mb-8 p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Model Status</h3>
+        {% if model %}
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <span class="h-3 w-3 rounded-full mr-3 {% if model.status == 'ready' %}bg-green-400{% elif model.status == 'training' %}bg-yellow-400 animate-pulse{% else %}bg-red-400{% endif %}"></span>
+                <div>
+                    <p class="font-medium text-gray-900">{{ model.name }}</p>
+                    <p class="text-sm text-gray-500">
+                        Status: {{ model.status }}
+                        {% if model.trained_at %} | Trained: {{ model.trained_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
+                    </p>
+                </div>
+            </div>
+            {% if model.metrics %}
+            <div class="text-right">
+                <p class="text-sm text-gray-500">Accuracy: {{ "%.1f"|format(model.metrics.get('accuracy', 0) * 100) }}%</p>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="flex items-center justify-between">
+            <p class="text-gray-500">No trained model yet. Train a model on your building data to unlock predictions.</p>
+            <a href="/upload" class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                Train Model
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Power Forecast -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Power Consumption Forecast</h3>
+            {% if model and model.status == 'ready' %}
+            <canvas id="forecastChart" height="200"></canvas>
+            {% else %}
+            <div class="flex items-center justify-center h-48 bg-gray-50 rounded-lg">
+                <p class="text-gray-500">Train a model to see power forecasts</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Anomaly Detection -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Anomaly Detection</h3>
+            {% if model and model.status == 'ready' %}
+            <div class="space-y-4">
+                <div class="flex items-center p-4 bg-green-50 rounded-lg">
+                    <svg class="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span class="ml-3 text-green-800">No anomalies detected in the last 24 hours</span>
+                </div>
+                <p class="text-sm text-gray-500">
+                    The AI continuously monitors your building's power consumption patterns and alerts you when unusual activity is detected.
+                </p>
+            </div>
+            {% else %}
+            <div class="flex items-center justify-center h-48 bg-gray-50 rounded-lg">
+                <p class="text-gray-500">Train a model to enable anomaly detection</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Efficiency Recommendations -->
+        <div class="bg-white shadow rounded-lg p-6 lg:col-span-2">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Efficiency Recommendations</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100">
+                                <span class="text-sm font-medium text-blue-600">1</span>
+                            </span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-sm font-medium text-gray-900">HVAC Optimization</h4>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Adjust HVAC schedules based on occupancy patterns to reduce energy waste during off-hours.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-green-100">
+                                <span class="text-sm font-medium text-green-600">2</span>
+                            </span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-sm font-medium text-gray-900">Lighting Automation</h4>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Implement daylight harvesting and occupancy-based lighting controls for 15-30% savings.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-yellow-100">
+                                <span class="text-sm font-medium text-yellow-600">3</span>
+                            </span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-sm font-medium text-gray-900">Peak Demand Management</h4>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Shift non-critical loads to off-peak hours to reduce demand charges on your utility bill.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 border border-gray-200 rounded-lg">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-purple-100">
+                                <span class="text-sm font-medium text-purple-600">4</span>
+                            </span>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-sm font-medium text-gray-900">Equipment Maintenance</h4>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Schedule predictive maintenance for HVAC equipment to maintain optimal efficiency.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+{% if model and model.status == 'ready' %}
+// Generate mock forecast data for demo
+const ctx = document.getElementById('forecastChart').getContext('2d');
+const hours = Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
+const values = hours.map((_, i) => {
+    const base = 50 + 30 * Math.abs((i - 12) / 12);
+    return (base + Math.random() * 10 - 5).toFixed(1);
+});
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: hours,
+        datasets: [{
+            label: 'Predicted Power (kWh)',
+            data: values,
+            borderColor: 'rgb(79, 70, 229)',
+            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: { display: true, text: 'Power (kWh)' }
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

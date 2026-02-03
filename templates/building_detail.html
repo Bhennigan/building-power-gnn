@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}{{ building.name }} - PowerGraph AI{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="min-w-0 flex-1">
+            <nav class="flex mb-4" aria-label="Breadcrumb">
+                <ol class="flex items-center space-x-4">
+                    <li>
+                        <a href="/buildings" class="text-gray-400 hover:text-gray-500">Buildings</a>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <svg class="flex-shrink-0 h-5 w-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="ml-4 text-sm font-medium text-gray-500">{{ building.name }}</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">
+                {{ building.name }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                {{ building.address or 'No address' }} | {{ building.building_type or 'Unknown type' }}
+            </p>
+        </div>
+        <div class="mt-4 flex md:ml-4 md:mt-0 space-x-3">
+            <a href="/upload?building={{ building.id }}" class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                Upload Data
+            </a>
+            <button x-data @click="if(confirm('Delete this building?')) window.location='/api/v1/buildings/{{ building.id }}/delete'" class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700">
+                Delete
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Nodes</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ stats.total_nodes }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Edges</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ stats.total_edges }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Readings</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ stats.total_readings }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Status</dt>
+                            <dd class="text-lg font-medium text-green-600">Active</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Node Breakdown -->
+    {% if stats.nodes_by_type %}
+    <div class="bg-white shadow rounded-lg mb-8">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Node Breakdown</h3>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                {% for type, count in stats.nodes_by_type.items() %}
+                <div class="text-center p-4 bg-gray-50 rounded-lg">
+                    <p class="text-2xl font-bold text-indigo-600">{{ count }}</p>
+                    <p class="text-sm text-gray-500">{{ type }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Nodes Table -->
+    {% if nodes %}
+    <div class="bg-white shadow rounded-lg mb-8">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Nodes ({{ nodes|length }})</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Node ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subtype</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Zone</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Floor</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for node in nodes[:50] %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ node.node_id }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if node.node_type == 'HVAC' %}bg-blue-100 text-blue-800
+                                {% elif node.node_type == 'Sensor' %}bg-green-100 text-green-800
+                                {% elif node.node_type == 'Room' %}bg-purple-100 text-purple-800
+                                {% elif node.node_type == 'Lighting' %}bg-yellow-100 text-yellow-800
+                                {% elif node.node_type == 'Meter' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ node.node_type }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ node.subtype or '-' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ node.zone or '-' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ node.floor or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if nodes|length > 50 %}
+            <div class="px-6 py-3 bg-gray-50 text-sm text-gray-500">
+                Showing 50 of {{ nodes|length }} nodes
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Edges Table -->
+    {% if edges %}
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Edges ({{ edges|length }})</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bidirectional</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for edge in edges[:50] %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ edge.source_node_id }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ edge.target_node_id }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                {{ edge.edge_type }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ edge.weight }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if edge.bidirectional %}Yes{% else %}No{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if edges|length > 50 %}
+            <div class="px-6 py-3 bg-gray-50 text-sm text-gray-500">
+                Showing 50 of {{ edges|length }} edges
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

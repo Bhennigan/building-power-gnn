@@ -23,12 +23,10 @@ class TestHealthEndpoints:
         assert data["status"] == "healthy"
 
     def test_root_endpoint(self, client):
-        """Root endpoint should return API info."""
-        response = client.get("/")
-        assert response.status_code == 200
-        data = response.json()
-        assert "name" in data
-        assert "version" in data
+        """Root endpoint should redirect to login."""
+        response = client.get("/", follow_redirects=False)
+        assert response.status_code == 302
+        assert response.headers.get("location") == "/login"
 
 
 class TestIngestionEndpoints:

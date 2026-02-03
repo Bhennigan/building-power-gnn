@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - PowerGraph AI{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="min-w-0 flex-1">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">
+                Dashboard
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Welcome back, {{ user.name or user.email }}
+            </p>
+        </div>
+        <div class="mt-4 flex md:ml-4 md:mt-0">
+            <a href="/upload" class="ml-3 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                + Upload Data
+            </a>
+        </div>
+    </div>
+
+    {% if buildings %}
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Buildings</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ buildings|length }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Nodes</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ total_nodes }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Efficiency Score</dt>
+                            <dd class="text-lg font-medium {% if efficiency_score >= 70 %}text-green-600{% elif efficiency_score >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                {{ "%.1f"|format(efficiency_score) }}%
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Est. Monthly Savings</dt>
+                            <dd class="text-lg font-medium text-gray-900">${{ "%.0f"|format(estimated_savings) }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Power Forecast Chart -->
+        <div class="lg:col-span-2 bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">24-Hour Power Forecast</h3>
+            <canvas id="forecastChart" height="200"></canvas>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Recommendations</h3>
+            <div class="space-y-4">
+                {% for rec in recommendations %}
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <span class="inline-flex items-center justify-center h-8 w-8 rounded-full {% if loop.index == 1 %}bg-red-100{% elif loop.index == 2 %}bg-yellow-100{% else %}bg-blue-100{% endif %}">
+                            <span class="text-sm font-medium {% if loop.index == 1 %}text-red-600{% elif loop.index == 2 %}text-yellow-600{% else %}text-blue-600{% endif %}">{{ loop.index }}</span>
+                        </span>
+                    </div>
+                    <p class="ml-3 text-sm text-gray-600">{{ rec }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Buildings List -->
+        <div class="lg:col-span-3 bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Your Buildings</h3>
+            </div>
+            <ul class="divide-y divide-gray-200">
+                {% for building in buildings %}
+                <li class="px-6 py-4 hover:bg-gray-50">
+                    <a href="/buildings/{{ building.id }}" class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-indigo-600">{{ building.name }}</p>
+                            <p class="text-sm text-gray-500">{{ building.address or 'No address' }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-900">{{ building.node_count or 0 }} nodes</p>
+                            <p class="text-sm text-gray-500">{{ building.building_type or 'Unknown type' }}</p>
+                        </div>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-16">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
+        <h3 class="mt-2 text-lg font-medium text-gray-900">No buildings yet</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by uploading your building data.</p>
+        <div class="mt-6">
+            <a href="/upload" class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                + Upload Building Data
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+{% if buildings and forecast %}
+const ctx = document.getElementById('forecastChart').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ forecast_labels | safe }},
+        datasets: [{
+            label: 'Predicted Power (kWh)',
+            data: {{ forecast_values | safe }},
+            borderColor: 'rgb(79, 70, 229)',
+            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: { display: true, text: 'Power (kWh)' }
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}
