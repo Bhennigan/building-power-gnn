@@ -146,7 +146,14 @@ async def upload_building_data(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Upload CSV/Excel data to a building."""
+    """Upload CSV/Excel/JSON/XML data to a building.
+
+    Supported file formats:
+    - CSV (.csv): Single data type per file (auto-detected or specified via data_type)
+    - Excel (.xlsx, .xls): Multiple sheets supported (nodes, edges, readings)
+    - JSON (.json): Array of records or structured {nodes: [], edges: [], readings: []}
+    - XML (.xml): Building graph XML format with Nodes, Edges, TimeSeries elements
+    """
     # Verify building access
     building = crud.get_building(db, building_id)
     if not building or building.tenant_id != user.tenant_id:
@@ -155,10 +162,19 @@ async def upload_building_data(
     # Read file content
     content = await file.read()
     filename = file.filename or "upload.csv"
+    ext = filename.lower().split(".")[-1] if "." in filename else ""
 
-    # Parse file
+    # Parse file based on extension
     parser = CSVParser()
-    result = parser.parse_file(content, filename, data_type)
+
+    if ext == "json":
+        result = parser.parse_json_file(content, filename)
+    elif ext == "xml":
+        result = parser.parse_xml_file(content, filename)
+    elif ext in ["xlsx", "xls"]:
+        result = parser.parse_multi_sheet_excel(content)
+    else:
+        result = parser.parse_file(content, filename, data_type)
 
     response = UploadResponse(
         errors=result.errors,

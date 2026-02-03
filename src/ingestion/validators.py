@@ -20,6 +20,8 @@ class NodeType(str, Enum):
     ROOM = "Room"
     METER = "Meter"
     WEATHER_STATION = "WeatherStation"
+    EQUIPMENT = "Equipment"
+    ZONE = "Zone"
 
 
 class SensorSubtype(str, Enum):
@@ -30,6 +32,10 @@ class SensorSubtype(str, Enum):
     CO2 = "co2"
     LIGHT = "light"
     POWER = "power"
+    CONTACT = "contact"
+    MOTION = "motion"
+    WATER = "water"
+    SMOKE = "smoke"
 
 
 class EdgeType(str, Enum):
@@ -39,6 +45,8 @@ class EdgeType(str, Enum):
     FEEDS = "feeds"
     ADJACENT = "adjacent"
     CONTROLS = "controls"
+    CONTAINS = "contains"
+    CONNECTED_TO = "connected_to"
 
 
 # Pydantic models for API validation
@@ -138,12 +146,41 @@ class GraphValidator:
     """Validates building graph data integrity."""
 
     # Edge type constraints: source_type -> target_type
+    # Note: Empty list means any connection is allowed for that edge type
     EDGE_CONSTRAINTS = {
-        EdgeType.SERVES: [(NodeType.HVAC, NodeType.ROOM), (NodeType.LIGHTING, NodeType.ROOM)],
-        EdgeType.MONITORS: [(NodeType.SENSOR, NodeType.ROOM), (NodeType.SENSOR, NodeType.HVAC)],
-        EdgeType.FEEDS: [(NodeType.METER, NodeType.HVAC), (NodeType.METER, NodeType.LIGHTING)],
+        EdgeType.SERVES: [
+            (NodeType.HVAC, NodeType.ROOM),
+            (NodeType.LIGHTING, NodeType.ROOM),
+            (NodeType.EQUIPMENT, NodeType.ROOM),
+        ],
+        EdgeType.MONITORS: [
+            (NodeType.SENSOR, NodeType.ROOM),
+            (NodeType.SENSOR, NodeType.HVAC),
+            (NodeType.SENSOR, NodeType.EQUIPMENT),
+            (NodeType.SENSOR, NodeType.METER),
+            (NodeType.WEATHER_STATION, NodeType.HVAC),
+            (NodeType.WEATHER_STATION, NodeType.EQUIPMENT),
+        ],
+        EdgeType.FEEDS: [
+            (NodeType.METER, NodeType.HVAC),
+            (NodeType.METER, NodeType.LIGHTING),
+            (NodeType.METER, NodeType.EQUIPMENT),
+            (NodeType.METER, NodeType.METER),
+            (NodeType.EQUIPMENT, NodeType.EQUIPMENT),
+            (NodeType.EQUIPMENT, NodeType.METER),
+            (NodeType.HVAC, NodeType.HVAC),
+        ],
         EdgeType.ADJACENT: [(NodeType.ROOM, NodeType.ROOM)],
-        EdgeType.CONTROLS: [(NodeType.SENSOR, NodeType.HVAC), (NodeType.SENSOR, NodeType.LIGHTING)],
+        EdgeType.CONTROLS: [
+            (NodeType.SENSOR, NodeType.HVAC),
+            (NodeType.SENSOR, NodeType.LIGHTING),
+            (NodeType.SENSOR, NodeType.EQUIPMENT),
+        ],
+        EdgeType.CONTAINS: [
+            (NodeType.ZONE, NodeType.ROOM),
+            (NodeType.ROOM, NodeType.EQUIPMENT),
+        ],
+        EdgeType.CONNECTED_TO: [],  # Allow any connection
     }
 
     def validate_nodes(self, nodes_df: pd.DataFrame) -> ValidationResult:

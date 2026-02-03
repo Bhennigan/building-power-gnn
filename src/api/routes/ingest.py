@@ -67,8 +67,8 @@ async def upload_xml(
     Returns:
         Ingestion result summary.
     """
-    if not file.filename.endswith(".xml"):
-        raise HTTPException(status_code=400, detail="File must be XML format")
+    if not file.filename.lower().endswith(".xml"):
+        raise HTTPException(status_code=400, detail="File must be XML format (.xml)")
 
     # Save to temp file
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xml") as tmp:
