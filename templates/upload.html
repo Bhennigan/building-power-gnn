@@ -100,91 +100,155 @@
     <div x-show="step === 2" x-cloak class="bg-white shadow rounded-lg p-6">
         <h3 class="text-lg font-medium text-gray-900 mb-4">Upload Data Files</h3>
 
-        <div class="mb-6">
-            <div class="flex space-x-4 mb-4">
-                <a href="/api/v1/templates/nodes" class="text-sm text-indigo-600 hover:text-indigo-800">Download Nodes Template</a>
-                <a href="/api/v1/templates/edges" class="text-sm text-indigo-600 hover:text-indigo-800">Download Edges Template</a>
-                <a href="/api/v1/templates/readings" class="text-sm text-indigo-600 hover:text-indigo-800">Download Readings Template</a>
+        <!-- Upload Mode Tabs -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="-mb-px flex space-x-8">
+                <button @click="uploadMode = 'bulk'"
+                        :class="uploadMode === 'bulk' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Bulk Upload (Recommended)
+                </button>
+                <button @click="uploadMode = 'individual'"
+                        :class="uploadMode === 'individual' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Individual Files
+                </button>
+            </nav>
+        </div>
+
+        <!-- Bulk Upload Mode -->
+        <div x-show="uploadMode === 'bulk'">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h4 class="font-medium text-blue-800 mb-2">Supported File Formats</h4>
+                <ul class="text-sm text-blue-700 space-y-1">
+                    <li><strong>XML:</strong> Building graph format with &lt;Nodes&gt;, &lt;Edges&gt;, &lt;TimeSeries&gt; elements</li>
+                    <li><strong>JSON:</strong> Object with "nodes", "edges", "readings" arrays</li>
+                    <li><strong>Excel:</strong> Multiple sheets named "nodes", "edges", "readings"</li>
+                    <li><strong>CSV:</strong> Single data type per file (use Individual Files mode for multiple CSVs)</li>
+                </ul>
+            </div>
+
+            <!-- Bulk File Upload Zone -->
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8"
+                 :class="{'border-green-400 bg-green-50': bulkFile}"
+                 @dragover.prevent="$el.classList.add('border-indigo-400')"
+                 @dragleave.prevent="$el.classList.remove('border-indigo-400')"
+                 @drop.prevent="handleBulkDrop($event)">
+                <div class="text-center">
+                    <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <p class="mt-4 text-sm text-gray-600">
+                        <template x-if="!bulkFile">
+                            <span>Drag & drop your building data file or
+                                <label class="text-indigo-600 hover:text-indigo-500 cursor-pointer font-medium">browse
+                                    <input type="file" class="hidden" accept=".csv,.xlsx,.xls,.json,.xml" @change="handleBulkFile($event)">
+                                </label>
+                            </span>
+                        </template>
+                        <template x-if="bulkFile">
+                            <span class="text-green-600 font-medium">
+                                <svg class="inline h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span x-text="bulkFile.name"></span>
+                                <button @click="bulkFile = null" class="ml-2 text-red-500 hover:text-red-700 text-sm">(remove)</button>
+                            </span>
+                        </template>
+                    </p>
+                    <p class="text-xs text-gray-500 mt-2">Accepts CSV, Excel (.xlsx, .xls), JSON, and XML files</p>
+                </div>
             </div>
         </div>
 
-        <!-- File Upload Zones -->
-        <div class="space-y-6">
-            <!-- Nodes -->
-            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6"
-                 :class="{'border-green-400 bg-green-50': files.nodes}"
-                 @dragover.prevent="$el.classList.add('border-indigo-400')"
-                 @dragleave.prevent="$el.classList.remove('border-indigo-400')"
-                 @drop.prevent="handleDrop($event, 'nodes')">
-                <div class="text-center">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    <p class="mt-2 text-sm text-gray-600">
-                        <template x-if="!files.nodes">
-                            <span>Drag & drop <strong>Nodes</strong> file (CSV/Excel) or
-                                <label class="text-indigo-600 hover:text-indigo-500 cursor-pointer">browse
-                                    <input type="file" class="hidden" accept=".csv,.xlsx,.xls" @change="handleFile($event, 'nodes')">
-                                </label>
-                            </span>
-                        </template>
-                        <template x-if="files.nodes">
-                            <span class="text-green-600">✓ <span x-text="files.nodes.name"></span></span>
-                        </template>
-                    </p>
-                    <p class="text-xs text-gray-500 mt-1">HVAC units, sensors, rooms, meters</p>
+        <!-- Individual Files Mode -->
+        <div x-show="uploadMode === 'individual'">
+            <div class="mb-6">
+                <div class="flex space-x-4 mb-4">
+                    <a href="/api/v1/templates/nodes" class="text-sm text-indigo-600 hover:text-indigo-800">Download Nodes Template</a>
+                    <a href="/api/v1/templates/edges" class="text-sm text-indigo-600 hover:text-indigo-800">Download Edges Template</a>
+                    <a href="/api/v1/templates/readings" class="text-sm text-indigo-600 hover:text-indigo-800">Download Readings Template</a>
                 </div>
             </div>
 
-            <!-- Edges -->
-            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6"
-                 :class="{'border-green-400 bg-green-50': files.edges}"
-                 @dragover.prevent="$el.classList.add('border-indigo-400')"
-                 @dragleave.prevent="$el.classList.remove('border-indigo-400')"
-                 @drop.prevent="handleDrop($event, 'edges')">
-                <div class="text-center">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
-                    </svg>
-                    <p class="mt-2 text-sm text-gray-600">
-                        <template x-if="!files.edges">
-                            <span>Drag & drop <strong>Edges</strong> file (CSV/Excel) or
-                                <label class="text-indigo-600 hover:text-indigo-500 cursor-pointer">browse
-                                    <input type="file" class="hidden" accept=".csv,.xlsx,.xls" @change="handleFile($event, 'edges')">
-                                </label>
-                            </span>
-                        </template>
-                        <template x-if="files.edges">
-                            <span class="text-green-600">✓ <span x-text="files.edges.name"></span></span>
-                        </template>
-                    </p>
-                    <p class="text-xs text-gray-500 mt-1">Connections between equipment</p>
+            <!-- File Upload Zones -->
+            <div class="space-y-6">
+                <!-- Nodes -->
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6"
+                     :class="{'border-green-400 bg-green-50': files.nodes}"
+                     @dragover.prevent="$el.classList.add('border-indigo-400')"
+                     @dragleave.prevent="$el.classList.remove('border-indigo-400')"
+                     @drop.prevent="handleDrop($event, 'nodes')">
+                    <div class="text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <p class="mt-2 text-sm text-gray-600">
+                            <template x-if="!files.nodes">
+                                <span>Drag & drop <strong>Nodes</strong> file or
+                                    <label class="text-indigo-600 hover:text-indigo-500 cursor-pointer">browse
+                                        <input type="file" class="hidden" accept=".csv,.xlsx,.xls,.json,.xml" @change="handleFile($event, 'nodes')">
+                                    </label>
+                                </span>
+                            </template>
+                            <template x-if="files.nodes">
+                                <span class="text-green-600">&#10003; <span x-text="files.nodes.name"></span></span>
+                            </template>
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">HVAC units, sensors, rooms, meters</p>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Readings (Optional) -->
-            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6"
-                 :class="{'border-green-400 bg-green-50': files.readings}"
-                 @dragover.prevent="$el.classList.add('border-indigo-400')"
-                 @dragleave.prevent="$el.classList.remove('border-indigo-400')"
-                 @drop.prevent="handleDrop($event, 'readings')">
-                <div class="text-center">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                    </svg>
-                    <p class="mt-2 text-sm text-gray-600">
-                        <template x-if="!files.readings">
-                            <span>Drag & drop <strong>Readings</strong> file (CSV/Excel) or
-                                <label class="text-indigo-600 hover:text-indigo-500 cursor-pointer">browse
-                                    <input type="file" class="hidden" accept=".csv,.xlsx,.xls" @change="handleFile($event, 'readings')">
-                                </label>
-                            </span>
-                        </template>
-                        <template x-if="files.readings">
-                            <span class="text-green-600">✓ <span x-text="files.readings.name"></span></span>
-                        </template>
-                    </p>
-                    <p class="text-xs text-gray-500 mt-1">Historical sensor data (optional)</p>
+                <!-- Edges -->
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6"
+                     :class="{'border-green-400 bg-green-50': files.edges}"
+                     @dragover.prevent="$el.classList.add('border-indigo-400')"
+                     @dragleave.prevent="$el.classList.remove('border-indigo-400')"
+                     @drop.prevent="handleDrop($event, 'edges')">
+                    <div class="text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                        </svg>
+                        <p class="mt-2 text-sm text-gray-600">
+                            <template x-if="!files.edges">
+                                <span>Drag & drop <strong>Edges</strong> file or
+                                    <label class="text-indigo-600 hover:text-indigo-500 cursor-pointer">browse
+                                        <input type="file" class="hidden" accept=".csv,.xlsx,.xls,.json,.xml" @change="handleFile($event, 'edges')">
+                                    </label>
+                                </span>
+                            </template>
+                            <template x-if="files.edges">
+                                <span class="text-green-600">&#10003; <span x-text="files.edges.name"></span></span>
+                            </template>
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">Connections between equipment</p>
+                    </div>
+                </div>
+
+                <!-- Readings (Optional) -->
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6"
+                     :class="{'border-green-400 bg-green-50': files.readings}"
+                     @dragover.prevent="$el.classList.add('border-indigo-400')"
+                     @dragleave.prevent="$el.classList.remove('border-indigo-400')"
+                     @drop.prevent="handleDrop($event, 'readings')">
+                    <div class="text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <p class="mt-2 text-sm text-gray-600">
+                            <template x-if="!files.readings">
+                                <span>Drag & drop <strong>Readings</strong> file or
+                                    <label class="text-indigo-600 hover:text-indigo-500 cursor-pointer">browse
+                                        <input type="file" class="hidden" accept=".csv,.xlsx,.xls,.json,.xml" @change="handleFile($event, 'readings')">
+                                    </label>
+                                </span>
+                            </template>
+                            <template x-if="files.readings">
+                                <span class="text-green-600">&#10003; <span x-text="files.readings.name"></span></span>
+                            </template>
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">Historical sensor data (optional)</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -193,7 +257,8 @@
             <button @click="step = 1" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                 Back
             </button>
-            <button @click="uploadFiles()" :disabled="!files.nodes || uploading"
+            <button @click="uploadFiles()"
+                    :disabled="(uploadMode === 'bulk' && !bulkFile) || (uploadMode === 'individual' && !files.nodes) || uploading"
                     class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50">
                 <span x-show="!uploading">Upload & Continue</span>
                 <span x-show="uploading" x-cloak>Uploading...</span>
@@ -281,6 +346,7 @@
 function uploadForm() {
     return {
         step: 1,
+        uploadMode: 'bulk',
         selectedBuilding: '',
         newBuilding: {
             name: '',
@@ -294,6 +360,7 @@ function uploadForm() {
             edges: null,
             readings: null
         },
+        bulkFile: null,
         uploading: false,
         uploadResult: {},
         training: false,
@@ -308,6 +375,16 @@ function uploadForm() {
             event.target.classList.remove('border-indigo-400');
             const file = event.dataTransfer.files[0];
             if (file) this.files[type] = file;
+        },
+
+        handleBulkFile(event) {
+            this.bulkFile = event.target.files[0];
+        },
+
+        handleBulkDrop(event) {
+            event.target.classList.remove('border-indigo-400');
+            const file = event.dataTransfer.files[0];
+            if (file) this.bulkFile = file;
         },
 
         async goToStep2() {
@@ -344,12 +421,10 @@ function uploadForm() {
             this.uploadResult = { nodes_added: 0, edges_added: 0, readings_added: 0, warnings: [] };
 
             try {
-                for (const [type, file] of Object.entries(this.files)) {
-                    if (!file) continue;
-
+                if (this.uploadMode === 'bulk' && this.bulkFile) {
+                    // Single bulk file upload
                     const formData = new FormData();
-                    formData.append('file', file);
-                    formData.append('data_type', type);
+                    formData.append('file', this.bulkFile);
 
                     const response = await fetch(`/api/v1/buildings/${this.buildingId}/upload`, {
                         method: 'POST',
@@ -358,14 +433,42 @@ function uploadForm() {
                     const data = await response.json();
 
                     if (response.ok) {
-                        this.uploadResult.nodes_added += data.nodes_added || 0;
-                        this.uploadResult.edges_added += data.edges_added || 0;
-                        this.uploadResult.readings_added += data.readings_added || 0;
+                        this.uploadResult.nodes_added = data.nodes_added || 0;
+                        this.uploadResult.edges_added = data.edges_added || 0;
+                        this.uploadResult.readings_added = data.readings_added || 0;
                         if (data.warnings) {
-                            this.uploadResult.warnings.push(...data.warnings);
+                            this.uploadResult.warnings = data.warnings;
                         }
                     } else {
-                        alert(`Failed to upload ${type}: ${data.detail}`);
+                        alert(`Upload failed: ${data.detail}`);
+                        this.uploading = false;
+                        return;
+                    }
+                } else {
+                    // Individual files upload
+                    for (const [type, file] of Object.entries(this.files)) {
+                        if (!file) continue;
+
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('data_type', type);
+
+                        const response = await fetch(`/api/v1/buildings/${this.buildingId}/upload`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            this.uploadResult.nodes_added += data.nodes_added || 0;
+                            this.uploadResult.edges_added += data.edges_added || 0;
+                            this.uploadResult.readings_added += data.readings_added || 0;
+                            if (data.warnings) {
+                                this.uploadResult.warnings.push(...data.warnings);
+                            }
+                        } else {
+                            alert(`Failed to upload ${type}: ${data.detail}`);
+                        }
                     }
                 }
 
