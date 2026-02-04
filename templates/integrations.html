@@ -27,7 +27,7 @@
     <!-- Supported Standards Info -->
     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
         <h3 class="font-medium text-blue-800 mb-2">Supported API Standards</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
             <div>
                 <p class="font-medium text-blue-700">Project Haystack</p>
                 <p class="text-blue-600">Smart building semantic data standard</p>
@@ -39,6 +39,10 @@
             <div>
                 <p class="font-medium text-blue-700">Weather APIs</p>
                 <p class="text-blue-600">Open-Meteo, OpenWeatherMap, NOAA</p>
+            </div>
+            <div>
+                <p class="font-medium text-blue-700">Power Monitors</p>
+                <p class="text-blue-600">Emporia, IoTaWatt, Shelly, Home Assistant</p>
             </div>
         </div>
     </div>
@@ -131,7 +135,7 @@
                     <!-- Integration Type Selector -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Integration Type</label>
-                        <div class="grid grid-cols-3 gap-3">
+                        <div class="grid grid-cols-4 gap-3">
                             <button @click="newIntegration.type = 'haystack'"
                                     :class="newIntegration.type === 'haystack' ? 'ring-2 ring-indigo-500 bg-indigo-50' : 'bg-white'"
                                     class="border rounded-lg p-3 text-center hover:bg-gray-50">
@@ -150,6 +154,12 @@
                                 <p class="font-medium text-sm">Weather</p>
                                 <p class="text-xs text-gray-500">External Data</p>
                             </button>
+                            <button @click="newIntegration.type = 'power_monitor'"
+                                    :class="newIntegration.type === 'power_monitor' ? 'ring-2 ring-indigo-500 bg-indigo-50' : 'bg-white'"
+                                    class="border rounded-lg p-3 text-center hover:bg-gray-50">
+                                <p class="font-medium text-sm">Power Monitor</p>
+                                <p class="text-xs text-gray-500">Emporia, IoTaWatt</p>
+                            </button>
                         </div>
                     </div>
 
@@ -162,7 +172,7 @@
                         </div>
 
                         <!-- Haystack/Green Button Fields -->
-                        <template x-if="newIntegration.type !== 'weather'">
+                        <template x-if="newIntegration.type !== 'weather' && newIntegration.type !== 'power_monitor'">
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">API URL</label>
@@ -292,6 +302,122 @@
                             </div>
                         </template>
 
+                        <!-- Power Monitor Fields -->
+                        <template x-if="newIntegration.type === 'power_monitor'">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Provider</label>
+                                    <select x-model="newIntegration.powerProvider"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        <option value="emporia">Emporia Vue (Cloud)</option>
+                                        <option value="iotawatt">IoTaWatt (Local)</option>
+                                        <option value="shelly">Shelly EM (Local)</option>
+                                        <option value="home_assistant">Home Assistant</option>
+                                        <option value="generic">Generic REST API</option>
+                                    </select>
+                                </div>
+
+                                <!-- Emporia Cloud Credentials -->
+                                <template x-if="newIntegration.powerProvider === 'emporia'">
+                                    <div class="space-y-4 bg-gray-50 p-4 rounded-lg">
+                                        <p class="text-sm text-gray-600">Enter your Emporia account credentials</p>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Email</label>
+                                            <input x-model="newIntegration.email" type="email"
+                                                   placeholder="your@email.com"
+                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Password</label>
+                                            <input x-model="newIntegration.password" type="password"
+                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Local Device URL -->
+                                <template x-if="newIntegration.powerProvider === 'iotawatt' || newIntegration.powerProvider === 'shelly'">
+                                    <div class="space-y-4 bg-gray-50 p-4 rounded-lg">
+                                        <p class="text-sm text-gray-600">Enter the local IP address of your device</p>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Device URL</label>
+                                            <input x-model="newIntegration.base_url" type="url"
+                                                   placeholder="http://192.168.1.100"
+                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        </div>
+                                        <template x-if="newIntegration.powerProvider === 'iotawatt'">
+                                            <div class="flex items-center">
+                                                <input x-model="newIntegration.requiresAuth" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                                <label class="ml-2 text-sm text-gray-700">Requires authentication</label>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+
+                                <!-- Home Assistant -->
+                                <template x-if="newIntegration.powerProvider === 'home_assistant'">
+                                    <div class="space-y-4 bg-gray-50 p-4 rounded-lg">
+                                        <p class="text-sm text-gray-600">Enter your Home Assistant URL and long-lived access token</p>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Home Assistant URL</label>
+                                            <input x-model="newIntegration.base_url" type="url"
+                                                   placeholder="http://homeassistant.local:8123"
+                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Access Token</label>
+                                            <input x-model="newIntegration.api_key" type="password"
+                                                   placeholder="Long-lived access token"
+                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            <p class="mt-1 text-xs text-gray-500">Create in Home Assistant: Profile > Long-Lived Access Tokens</p>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Generic REST API -->
+                                <template x-if="newIntegration.powerProvider === 'generic'">
+                                    <div class="space-y-4 bg-gray-50 p-4 rounded-lg">
+                                        <p class="text-sm text-gray-600">Configure a custom REST API endpoint</p>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">API URL</label>
+                                            <input x-model="newIntegration.base_url" type="url"
+                                                   placeholder="https://api.example.com"
+                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Authentication</label>
+                                            <select x-model="newIntegration.auth_type"
+                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                                <option value="none">None</option>
+                                                <option value="api_key">API Key</option>
+                                                <option value="bearer">Bearer Token</option>
+                                                <option value="basic">Basic Auth</option>
+                                            </select>
+                                        </div>
+                                        <template x-if="newIntegration.auth_type === 'api_key' || newIntegration.auth_type === 'bearer'">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">API Key / Token</label>
+                                                <input x-model="newIntegration.api_key" type="password"
+                                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+
+                                <!-- Building Association -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Associate with Building (optional)</label>
+                                    <select x-model="newIntegration.building_id"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        <option value="">-- None --</option>
+                                        <template x-for="building in buildings" :key="building.id">
+                                            <option :value="building.id" x-text="building.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </div>
+                        </template>
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Sync Interval (minutes)</label>
                             <input x-model="newIntegration.sync_interval" type="number" min="1" max="1440"
@@ -368,6 +494,10 @@ function integrationsPage() {
             latitude: '',
             longitude: '',
             sync_interval: 15,
+            // Power monitor specific
+            powerProvider: 'emporia',
+            email: '',
+            requiresAuth: false,
         },
 
         async init() {
@@ -421,6 +551,59 @@ function integrationsPage() {
                     } else {
                         alert('Please provide a location (building, address, or coordinates)');
                         return;
+                    }
+                } else if (this.newIntegration.type === 'power_monitor') {
+                    url = '/api/v1/integrations/power-monitor';
+                    const provider = this.newIntegration.powerProvider;
+
+                    // Generate default name if not provided
+                    const providerNames = {
+                        'emporia': 'Emporia Vue',
+                        'iotawatt': 'IoTaWatt',
+                        'shelly': 'Shelly EM',
+                        'home_assistant': 'Home Assistant',
+                        'generic': 'Power Monitor'
+                    };
+
+                    body = {
+                        name: this.newIntegration.name || providerNames[provider] || 'Power Monitor',
+                        provider: provider,
+                        sync_interval_minutes: parseInt(this.newIntegration.sync_interval) || 5,
+                        building_id: this.newIntegration.building_id || null,
+                    };
+
+                    // Provider-specific fields
+                    if (provider === 'emporia') {
+                        if (!this.newIntegration.email || !this.newIntegration.password) {
+                            alert('Please enter your Emporia email and password');
+                            return;
+                        }
+                        body.email = this.newIntegration.email;
+                        body.password = this.newIntegration.password;
+                    } else if (provider === 'iotawatt' || provider === 'shelly') {
+                        if (!this.newIntegration.base_url) {
+                            alert('Please enter the device URL');
+                            return;
+                        }
+                        body.base_url = this.newIntegration.base_url;
+                        body.device_preset = provider;
+                    } else if (provider === 'home_assistant') {
+                        if (!this.newIntegration.base_url || !this.newIntegration.api_key) {
+                            alert('Please enter the Home Assistant URL and access token');
+                            return;
+                        }
+                        body.base_url = this.newIntegration.base_url;
+                        body.api_key = this.newIntegration.api_key;
+                        body.auth_type = 'bearer';
+                        body.device_preset = 'home_assistant';
+                    } else if (provider === 'generic') {
+                        if (!this.newIntegration.base_url) {
+                            alert('Please enter the API URL');
+                            return;
+                        }
+                        body.base_url = this.newIntegration.base_url;
+                        body.auth_type = this.newIntegration.auth_type;
+                        body.api_key = this.newIntegration.api_key || null;
                     }
                 } else {
                     url = '/api/v1/integrations';
@@ -513,6 +696,10 @@ function integrationsPage() {
                 latitude: '',
                 longitude: '',
                 sync_interval: 15,
+                // Power monitor specific
+                powerProvider: 'emporia',
+                email: '',
+                requiresAuth: false,
             };
         },
 

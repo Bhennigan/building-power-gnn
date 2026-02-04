@@ -17,6 +17,7 @@ class APIStandard(str, Enum):
     HAYSTACK = "haystack"
     GREENBUTTON = "greenbutton"
     WEATHER = "weather"
+    POWER_MONITOR = "power_monitor"
     MODBUS = "modbus"
     BACNET = "bacnet"
     CUSTOM = "custom"

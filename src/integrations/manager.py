@@ -9,6 +9,8 @@ from .base import APIConnector, APIStandard, ConnectionConfig, SyncResult, Conne
 from .haystack import HaystackConnector
 from .greenbutton import GreenButtonConnector
 from .weather import WeatherConnector
+from .emporia import EmporiaConnector
+from .generic_power import GenericPowerConnector
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +23,16 @@ class IntegrationManager:
         APIStandard.HAYSTACK: HaystackConnector,
         APIStandard.GREENBUTTON: GreenButtonConnector,
         APIStandard.WEATHER: WeatherConnector,
+        APIStandard.POWER_MONITOR: EmporiaConnector,  # Default to Emporia
+    }
+
+    # Provider-specific power monitor connectors
+    POWER_MONITOR_PROVIDERS = {
+        "emporia": EmporiaConnector,
+        "generic": GenericPowerConnector,
+        "iotawatt": GenericPowerConnector,
+        "shelly": GenericPowerConnector,
+        "home_assistant": GenericPowerConnector,
     }
 
     def __init__(self):
@@ -41,9 +53,16 @@ class IntegrationManager:
             import uuid
             config.id = str(uuid.uuid4())
 
-        connector_class = self.CONNECTOR_CLASSES.get(config.api_standard)
-        if not connector_class:
-            raise ValueError(f"Unsupported API standard: {config.api_standard}")
+        # Handle power monitor providers
+        if config.api_standard == APIStandard.POWER_MONITOR:
+            provider = config.params.get("provider", "emporia").lower()
+            connector_class = self.POWER_MONITOR_PROVIDERS.get(provider)
+            if not connector_class:
+                raise ValueError(f"Unsupported power monitor provider: {provider}")
+        else:
+            connector_class = self.CONNECTOR_CLASSES.get(config.api_standard)
+            if not connector_class:
+                raise ValueError(f"Unsupported API standard: {config.api_standard}")
 
         connector = connector_class(config)
         self._connectors[config.id] = connector

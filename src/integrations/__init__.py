@@ -4,6 +4,9 @@ from .base import APIConnector, ConnectionConfig, SyncResult, APIStandard
 from .haystack import HaystackConnector
 from .greenbutton import GreenButtonConnector
 from .weather import WeatherConnector
+from .power_monitor import PowerMonitorConnector, PowerChannel, PowerReading, MeasurementScale
+from .emporia import EmporiaConnector
+from .generic_power import GenericPowerConnector, get_preset_config
 from .manager import IntegrationManager, get_integration_manager
 
 __all__ = [
@@ -14,6 +17,13 @@ __all__ = [
     "HaystackConnector",
     "GreenButtonConnector",
     "WeatherConnector",
+    "PowerMonitorConnector",
+    "PowerChannel",
+    "PowerReading",
+    "MeasurementScale",
+    "EmporiaConnector",
+    "GenericPowerConnector",
+    "get_preset_config",
     "IntegrationManager",
     "get_integration_manager",
 ]
