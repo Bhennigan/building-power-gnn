@@ -1,0 +1,527 @@
+{% extends "base.html" %}
+
+{% block title %}Integrations - PowerGraph AI{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8" x-data="integrationsPage()">
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="min-w-0 flex-1">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">
+                External Integrations
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Connect to external APIs to import live building data
+            </p>
+        </div>
+        <div class="mt-4 flex md:ml-4 md:mt-0">
+            <button @click="showAddModal = true"
+                    class="ml-3 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                <svg class="-ml-0.5 mr-1.5 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Add Integration
+            </button>
+        </div>
+    </div>
+
+    <!-- Supported Standards Info -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <h3 class="font-medium text-blue-800 mb-2">Supported API Standards</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+                <p class="font-medium text-blue-700">Project Haystack</p>
+                <p class="text-blue-600">Smart building semantic data standard</p>
+            </div>
+            <div>
+                <p class="font-medium text-blue-700">Green Button (ESPI)</p>
+                <p class="text-blue-600">Utility energy usage data</p>
+            </div>
+            <div>
+                <p class="font-medium text-blue-700">Weather APIs</p>
+                <p class="text-blue-600">Open-Meteo, OpenWeatherMap, NOAA</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Integrations List -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="px-4 py-5 sm:p-6">
+            <template x-if="integrations.length === 0">
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-semibold text-gray-900">No integrations</h3>
+                    <p class="mt-1 text-sm text-gray-500">Get started by adding an external data source.</p>
+                    <div class="mt-6">
+                        <button @click="showAddModal = true"
+                                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                            Add Integration
+                        </button>
+                    </div>
+                </div>
+            </template>
+
+            <template x-if="integrations.length > 0">
+                <div class="space-y-4">
+                    <template x-for="integration in integrations" :key="integration.id">
+                        <div class="border rounded-lg p-4 hover:bg-gray-50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <!-- Status Indicator -->
+                                    <div class="flex-shrink-0">
+                                        <span class="h-3 w-3 rounded-full inline-block"
+                                              :class="{
+                                                  'bg-green-400': integration.status === 'connected',
+                                                  'bg-yellow-400': integration.status === 'syncing',
+                                                  'bg-red-400': integration.status === 'error',
+                                                  'bg-gray-400': integration.status === 'disconnected'
+                                              }"></span>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-gray-900" x-text="integration.name"></h4>
+                                        <p class="text-sm text-gray-500">
+                                            <span x-text="integration.api_standard.toUpperCase()"></span>
+                                            <span class="mx-1">•</span>
+                                            <span x-text="integration.status"></span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <template x-if="integration.last_sync">
+                                        <span class="text-xs text-gray-500">
+                                            Last sync: <span x-text="formatDate(integration.last_sync)"></span>
+                                        </span>
+                                    </template>
+                                    <button @click="testIntegration(integration.id)"
+                                            class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50">
+                                        Test
+                                    </button>
+                                    <button @click="syncIntegration(integration.id)"
+                                            class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700">
+                                        Sync Now
+                                    </button>
+                                    <button @click="deleteIntegration(integration.id)"
+                                            class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                            <template x-if="integration.last_error">
+                                <p class="mt-2 text-sm text-red-600" x-text="integration.last_error"></p>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Add Integration Modal -->
+    <div x-show="showAddModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div x-show="showAddModal" @click="showAddModal = false"
+                 class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+            <div x-show="showAddModal"
+                 class="inline-block transform overflow-hidden rounded-lg bg-white px-4 pt-5 pb-4 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6 sm:align-middle">
+                <div>
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Add Integration</h3>
+
+                    <!-- Integration Type Selector -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Integration Type</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button @click="newIntegration.type = 'haystack'"
+                                    :class="newIntegration.type === 'haystack' ? 'ring-2 ring-indigo-500 bg-indigo-50' : 'bg-white'"
+                                    class="border rounded-lg p-3 text-center hover:bg-gray-50">
+                                <p class="font-medium text-sm">Haystack</p>
+                                <p class="text-xs text-gray-500">BMS Data</p>
+                            </button>
+                            <button @click="newIntegration.type = 'greenbutton'"
+                                    :class="newIntegration.type === 'greenbutton' ? 'ring-2 ring-indigo-500 bg-indigo-50' : 'bg-white'"
+                                    class="border rounded-lg p-3 text-center hover:bg-gray-50">
+                                <p class="font-medium text-sm">Green Button</p>
+                                <p class="text-xs text-gray-500">Utility Data</p>
+                            </button>
+                            <button @click="newIntegration.type = 'weather'"
+                                    :class="newIntegration.type === 'weather' ? 'ring-2 ring-indigo-500 bg-indigo-50' : 'bg-white'"
+                                    class="border rounded-lg p-3 text-center hover:bg-gray-50">
+                                <p class="font-medium text-sm">Weather</p>
+                                <p class="text-xs text-gray-500">External Data</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Common Fields -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Name</label>
+                            <input x-model="newIntegration.name" type="text"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+
+                        <!-- Haystack/Green Button Fields -->
+                        <template x-if="newIntegration.type !== 'weather'">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">API URL</label>
+                                    <input x-model="newIntegration.base_url" type="url" placeholder="https://api.example.com"
+                                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Authentication</label>
+                                    <select x-model="newIntegration.auth_type"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        <option value="none">None</option>
+                                        <option value="api_key">API Key</option>
+                                        <option value="bearer">Bearer Token</option>
+                                        <option value="basic">Basic Auth</option>
+                                    </select>
+                                </div>
+                                <template x-if="newIntegration.auth_type === 'api_key' || newIntegration.auth_type === 'bearer'">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">API Key / Token</label>
+                                        <input x-model="newIntegration.api_key" type="password"
+                                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    </div>
+                                </template>
+                                <template x-if="newIntegration.auth_type === 'basic'">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Username</label>
+                                            <input x-model="newIntegration.username" type="text"
+                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Password</label>
+                                            <input x-model="newIntegration.password" type="password"
+                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- Weather Fields -->
+                        <template x-if="newIntegration.type === 'weather'">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Provider</label>
+                                    <select x-model="newIntegration.provider"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        <option value="open_meteo">Open-Meteo (Free, no API key)</option>
+                                        <option value="openweathermap">OpenWeatherMap (API key required)</option>
+                                        <option value="noaa">NOAA Weather.gov (US only)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Location Source -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Location Source</label>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center">
+                                            <input type="radio" x-model="newIntegration.locationSource" value="building"
+                                                   class="h-4 w-4 text-indigo-600 border-gray-300">
+                                            <span class="ml-2 text-sm text-gray-700">Use Building Address</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="radio" x-model="newIntegration.locationSource" value="address"
+                                                   class="h-4 w-4 text-indigo-600 border-gray-300">
+                                            <span class="ml-2 text-sm text-gray-700">Enter Address</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="radio" x-model="newIntegration.locationSource" value="coordinates"
+                                                   class="h-4 w-4 text-indigo-600 border-gray-300">
+                                            <span class="ml-2 text-sm text-gray-700">Enter Coordinates</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Building Selector -->
+                                <template x-if="newIntegration.locationSource === 'building'">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Select Building</label>
+                                        <select x-model="newIntegration.building_id"
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            <option value="">-- Select a Building --</option>
+                                            <template x-for="building in buildings" :key="building.id">
+                                                <option :value="building.id" x-text="building.name + (building.address ? ' (' + building.address + ')' : '')"></option>
+                                            </template>
+                                        </select>
+                                        <p class="mt-1 text-xs text-gray-500">Weather data will be based on the building's address</p>
+                                    </div>
+                                </template>
+
+                                <!-- Address Input -->
+                                <template x-if="newIntegration.locationSource === 'address'">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Street Address</label>
+                                        <input x-model="newIntegration.address" type="text"
+                                               placeholder="123 Main St, New York, NY 10001"
+                                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        <p class="mt-1 text-xs text-gray-500">Address will be geocoded to coordinates</p>
+                                    </div>
+                                </template>
+
+                                <!-- Coordinates Input -->
+                                <template x-if="newIntegration.locationSource === 'coordinates'">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Latitude</label>
+                                            <input x-model="newIntegration.latitude" type="number" step="0.0001"
+                                                   placeholder="40.7128"
+                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Longitude</label>
+                                            <input x-model="newIntegration.longitude" type="number" step="0.0001"
+                                                   placeholder="-74.0060"
+                                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <template x-if="newIntegration.provider === 'openweathermap'">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">API Key</label>
+                                        <input x-model="newIntegration.api_key" type="password"
+                                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Sync Interval (minutes)</label>
+                            <input x-model="newIntegration.sync_interval" type="number" min="1" max="1440"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                    <button @click="createIntegration()"
+                            class="inline-flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none sm:col-start-2 sm:text-sm">
+                        Create
+                    </button>
+                    <button @click="showAddModal = false"
+                            class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none sm:col-start-1 sm:mt-0 sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Result Modal -->
+    <div x-show="showTestResult" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div @click="showTestResult = false" class="fixed inset-0 bg-gray-500 bg-opacity-75"></div>
+            <div class="inline-block transform overflow-hidden rounded-lg bg-white px-4 pt-5 pb-4 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6 sm:align-middle">
+                <div class="text-center">
+                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full"
+                         :class="testResult.success ? 'bg-green-100' : 'bg-red-100'">
+                        <svg x-show="testResult.success" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <svg x-show="!testResult.success" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </div>
+                    <h3 class="mt-3 text-lg font-medium text-gray-900" x-text="testResult.success ? 'Connection Successful' : 'Connection Failed'"></h3>
+                    <p class="mt-2 text-sm text-gray-500" x-text="testResult.message"></p>
+                </div>
+                <div class="mt-5">
+                    <button @click="showTestResult = false"
+                            class="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 sm:text-sm">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function integrationsPage() {
+    return {
+        integrations: [],
+        buildings: [],
+        showAddModal: false,
+        showTestResult: false,
+        testResult: { success: false, message: '' },
+        newIntegration: {
+            type: 'haystack',
+            name: '',
+            base_url: '',
+            auth_type: 'none',
+            api_key: '',
+            username: '',
+            password: '',
+            provider: 'open_meteo',
+            locationSource: 'building',
+            building_id: '',
+            address: '',
+            latitude: '',
+            longitude: '',
+            sync_interval: 15,
+        },
+
+        async init() {
+            await this.loadIntegrations();
+            await this.loadBuildings();
+        },
+
+        async loadBuildings() {
+            try {
+                const response = await fetch('/api/v1/buildings');
+                if (response.ok) {
+                    this.buildings = await response.json();
+                }
+            } catch (e) {
+                console.error('Failed to load buildings:', e);
+            }
+        },
+
+        async loadIntegrations() {
+            try {
+                const response = await fetch('/api/v1/integrations');
+                if (response.ok) {
+                    this.integrations = await response.json();
+                }
+            } catch (e) {
+                console.error('Failed to load integrations:', e);
+            }
+        },
+
+        async createIntegration() {
+            try {
+                let url, body;
+
+                if (this.newIntegration.type === 'weather') {
+                    url = '/api/v1/integrations/weather';
+                    body = {
+                        name: this.newIntegration.name || 'Weather Data',
+                        provider: this.newIntegration.provider,
+                        api_key: this.newIntegration.api_key || null,
+                        sync_interval_minutes: parseInt(this.newIntegration.sync_interval),
+                    };
+
+                    // Add location based on source
+                    if (this.newIntegration.locationSource === 'building' && this.newIntegration.building_id) {
+                        body.building_id = this.newIntegration.building_id;
+                    } else if (this.newIntegration.locationSource === 'address' && this.newIntegration.address) {
+                        body.address = this.newIntegration.address;
+                    } else if (this.newIntegration.locationSource === 'coordinates') {
+                        body.latitude = parseFloat(this.newIntegration.latitude);
+                        body.longitude = parseFloat(this.newIntegration.longitude);
+                    } else {
+                        alert('Please provide a location (building, address, or coordinates)');
+                        return;
+                    }
+                } else {
+                    url = '/api/v1/integrations';
+                    body = {
+                        name: this.newIntegration.name,
+                        api_standard: this.newIntegration.type,
+                        base_url: this.newIntegration.base_url,
+                        auth_type: this.newIntegration.auth_type,
+                        api_key: this.newIntegration.api_key || null,
+                        username: this.newIntegration.username || null,
+                        password: this.newIntegration.password || null,
+                        sync_interval_minutes: parseInt(this.newIntegration.sync_interval),
+                    };
+                }
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+
+                if (response.ok) {
+                    this.showAddModal = false;
+                    this.resetNewIntegration();
+                    await this.loadIntegrations();
+                } else {
+                    const data = await response.json();
+                    alert(data.detail || 'Failed to create integration');
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        },
+
+        async testIntegration(id) {
+            try {
+                const response = await fetch(`/api/v1/integrations/${id}/test`, { method: 'POST' });
+                this.testResult = await response.json();
+                this.showTestResult = true;
+                await this.loadIntegrations();
+            } catch (e) {
+                this.testResult = { success: false, message: e.message };
+                this.showTestResult = true;
+            }
+        },
+
+        async syncIntegration(id) {
+            try {
+                const response = await fetch(`/api/v1/integrations/${id}/sync`, { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    alert(`Sync complete: ${result.records_fetched} records fetched`);
+                } else {
+                    alert('Sync failed: ' + result.errors.join(', '));
+                }
+                await this.loadIntegrations();
+            } catch (e) {
+                alert('Sync error: ' + e.message);
+            }
+        },
+
+        async deleteIntegration(id) {
+            if (!confirm('Are you sure you want to delete this integration?')) return;
+
+            try {
+                const response = await fetch(`/api/v1/integrations/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    await this.loadIntegrations();
+                } else {
+                    alert('Failed to delete integration');
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        },
+
+        resetNewIntegration() {
+            this.newIntegration = {
+                type: 'haystack',
+                name: '',
+                base_url: '',
+                auth_type: 'none',
+                api_key: '',
+                username: '',
+                password: '',
+                provider: 'open_meteo',
+                locationSource: 'building',
+                building_id: '',
+                address: '',
+                latitude: '',
+                longitude: '',
+                sync_interval: 15,
+            };
+        },
+
+        formatDate(isoString) {
+            if (!isoString) return 'Never';
+            const date = new Date(isoString);
+            return date.toLocaleString();
+        }
+    };
+}
+</script>
+{% endblock %}

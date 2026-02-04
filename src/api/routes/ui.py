@@ -194,3 +194,17 @@ async def insights_page(
         "buildings": buildings,
         "model": model
     })
+
+
+@router.get("/integrations", response_class=HTMLResponse)
+async def integrations_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Integrations management page."""
+    return templates.TemplateResponse("integrations.html", {
+        "request": request,
+        "user": user,
+        "active_page": "integrations",
+    })

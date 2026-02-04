@@ -19,6 +19,7 @@ from io import StringIO
 from .routes import ingest, predict
 from .routes.ui import router as ui_router
 from .routes.buildings import router as buildings_router
+from .routes.integrations import router as integrations_router
 from .websocket import router as ws_router
 from ..auth.routes import router as auth_router
 from ..db.session import engine, Base
@@ -122,6 +123,7 @@ def create_app() -> FastAPI:
     app.include_router(buildings_router, prefix="/api/v1/buildings", tags=["Buildings"])
     app.include_router(ingest.router, prefix="/api/v1/ingest", tags=["Ingestion"])
     app.include_router(predict.router, prefix="/api/v1/predict", tags=["Prediction"])
+    app.include_router(integrations_router, prefix="/api/v1/integrations", tags=["Integrations"])
     app.include_router(ws_router, prefix="/ws", tags=["WebSocket"])
     app.include_router(ui_router, tags=["UI"])
 
