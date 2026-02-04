@@ -250,6 +250,153 @@ async def create_weather_integration(
     )
 
 
+class PowerMonitorConfigRequest(BaseModel):
+    """Configuration for power monitor integration."""
+    name: str = Field(default="Power Monitor")
+    provider: str = Field(default="emporia", description="emporia, iotawatt, shelly, home_assistant, generic")
+    email: Optional[str] = Field(None, description="Account email (for Emporia)")
+    password: Optional[str] = Field(None, description="Account password (for Emporia)")
+    base_url: Optional[str] = Field(None, description="Device/API base URL (for generic/local devices)")
+    api_key: Optional[str] = Field(None, description="API key if required")
+    auth_type: str = Field(default="none", description="none, api_key, basic, bearer")
+    sync_interval_minutes: int = Field(default=5, ge=1, le=1440)
+    building_id: Optional[str] = Field(None, description="Building to associate with")
+    device_preset: Optional[str] = Field(None, description="Use preset config: iotawatt, shelly, home_assistant")
+    custom_endpoints: Optional[dict] = Field(None, description="Custom API endpoint paths")
+    custom_mapping: Optional[dict] = Field(None, description="Custom data field mapping")
+
+
+class LiveReadingResponse(BaseModel):
+    """Live power reading response."""
+    channel_id: str
+    channel_name: Optional[str] = None
+    watts: float
+    kwh: Optional[float] = None
+    voltage: Optional[float] = None
+    current: Optional[float] = None
+    timestamp: str
+
+
+@router.post("/power-monitor", response_model=IntegrationResponse)
+async def create_power_monitor_integration(
+    request: PowerMonitorConfigRequest,
+    user: User = Depends(get_current_user),
+):
+    """Create a power monitoring integration (Emporia, IoTaWatt, Shelly, etc.).
+
+    For Emporia:
+    - Provide email and password for your Emporia account
+
+    For local devices (IoTaWatt, Shelly):
+    - Provide base_url pointing to the device
+
+    For Home Assistant:
+    - Provide base_url and api_key (long-lived access token)
+    """
+    from ...integrations.generic_power import get_preset_config
+
+    # Build params
+    params = {
+        "provider": request.provider.lower(),
+        "email": request.email,
+        "password": request.password,
+    }
+
+    # Apply preset config if specified
+    if request.device_preset:
+        preset = get_preset_config(request.device_preset)
+        if preset:
+            params["endpoints"] = preset.get("endpoints", {})
+            params["data_mapping"] = preset.get("data_mapping", {})
+            params["response_config"] = preset.get("response_config", {})
+
+    # Apply custom overrides
+    if request.custom_endpoints:
+        params["endpoints"] = {**params.get("endpoints", {}), **request.custom_endpoints}
+    if request.custom_mapping:
+        params["data_mapping"] = {**params.get("data_mapping", {}), **request.custom_mapping}
+
+    # Determine base URL
+    base_url = request.base_url or ""
+    if request.provider.lower() == "emporia":
+        base_url = "https://api.emporiaenergy.com"
+
+    config = ConnectionConfig(
+        name=request.name,
+        api_standard=APIStandard.POWER_MONITOR,
+        base_url=base_url,
+        api_key=request.api_key,
+        username=request.email,
+        password=request.password,
+        auth_type=request.auth_type,
+        sync_interval_minutes=request.sync_interval_minutes,
+        enabled=True,
+        building_id=request.building_id,
+        params=params,
+    )
+
+    manager = get_integration_manager()
+
+    try:
+        connector_id = manager.register_connector(config)
+        connector = manager.get_connector(connector_id)
+
+        return IntegrationResponse(
+            id=connector_id,
+            name=config.name,
+            api_standard=config.api_standard.value,
+            base_url=config.base_url,
+            auth_type=config.auth_type,
+            status=connector.status.value,
+            last_sync=None,
+            last_error=None,
+            enabled=config.enabled,
+            sync_interval_minutes=config.sync_interval_minutes,
+        )
+
+    except Exception as e:
+        logger.exception("Failed to create power monitor integration")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Supported API standards info
+@router.get("/standards/info")
+async def get_supported_standards():
+    """Get information about supported API standards."""
+    return {
+        "standards": [
+            {
+                "id": "haystack",
+                "name": "Project Haystack",
+                "description": "Open source standard for semantic data models in smart buildings",
+                "auth_types": ["none", "basic", "bearer", "scram"],
+                "website": "https://project-haystack.org/",
+            },
+            {
+                "id": "greenbutton",
+                "name": "Green Button",
+                "description": "Standard for utility energy usage data (ESPI)",
+                "auth_types": ["bearer", "oauth2"],
+                "website": "https://www.greenbuttondata.org/",
+            },
+            {
+                "id": "weather",
+                "name": "Weather APIs",
+                "description": "External weather data (Open-Meteo, OpenWeatherMap, NOAA)",
+                "auth_types": ["none", "api_key"],
+                "providers": ["open_meteo", "openweathermap", "noaa"],
+            },
+            {
+                "id": "power_monitor",
+                "name": "Power Monitors",
+                "description": "Real-time energy monitoring devices (Emporia, IoTaWatt, Shelly, etc.)",
+                "auth_types": ["none", "api_key", "basic", "credentials"],
+                "providers": ["emporia", "iotawatt", "shelly", "home_assistant", "generic"],
+            },
+        ]
+    }
+
+
 @router.get("/{integration_id}", response_model=IntegrationResponse)
 async def get_integration(
     integration_id: str,
@@ -391,115 +538,6 @@ async def disable_integration(
     return {"message": "Integration disabled"}
 
 
-class PowerMonitorConfigRequest(BaseModel):
-    """Configuration for power monitor integration."""
-    name: str = Field(default="Power Monitor")
-    provider: str = Field(default="emporia", description="emporia, iotawatt, shelly, home_assistant, generic")
-    email: Optional[str] = Field(None, description="Account email (for Emporia)")
-    password: Optional[str] = Field(None, description="Account password (for Emporia)")
-    base_url: Optional[str] = Field(None, description="Device/API base URL (for generic/local devices)")
-    api_key: Optional[str] = Field(None, description="API key if required")
-    auth_type: str = Field(default="none", description="none, api_key, basic, bearer")
-    sync_interval_minutes: int = Field(default=5, ge=1, le=1440)
-    building_id: Optional[str] = Field(None, description="Building to associate with")
-    device_preset: Optional[str] = Field(None, description="Use preset config: iotawatt, shelly, home_assistant")
-    custom_endpoints: Optional[dict] = Field(None, description="Custom API endpoint paths")
-    custom_mapping: Optional[dict] = Field(None, description="Custom data field mapping")
-
-
-class LiveReadingResponse(BaseModel):
-    """Live power reading response."""
-    channel_id: str
-    channel_name: Optional[str] = None
-    watts: float
-    kwh: Optional[float] = None
-    voltage: Optional[float] = None
-    current: Optional[float] = None
-    timestamp: str
-
-
-@router.post("/power-monitor", response_model=IntegrationResponse)
-async def create_power_monitor_integration(
-    request: PowerMonitorConfigRequest,
-    user: User = Depends(get_current_user),
-):
-    """Create a power monitoring integration (Emporia, IoTaWatt, Shelly, etc.).
-
-    For Emporia:
-    - Provide email and password for your Emporia account
-
-    For local devices (IoTaWatt, Shelly):
-    - Provide base_url pointing to the device
-
-    For Home Assistant:
-    - Provide base_url and api_key (long-lived access token)
-    """
-    from ...integrations.generic_power import get_preset_config
-
-    # Build params
-    params = {
-        "provider": request.provider.lower(),
-        "email": request.email,
-        "password": request.password,
-    }
-
-    # Apply preset config if specified
-    if request.device_preset:
-        preset = get_preset_config(request.device_preset)
-        if preset:
-            params["endpoints"] = preset.get("endpoints", {})
-            params["data_mapping"] = preset.get("data_mapping", {})
-            params["response_config"] = preset.get("response_config", {})
-
-    # Apply custom overrides
-    if request.custom_endpoints:
-        params["endpoints"] = {**params.get("endpoints", {}), **request.custom_endpoints}
-    if request.custom_mapping:
-        params["data_mapping"] = {**params.get("data_mapping", {}), **request.custom_mapping}
-
-    # Determine base URL
-    base_url = request.base_url or ""
-    if request.provider.lower() == "emporia":
-        base_url = "https://api.emporiaenergy.com"
-
-    config = ConnectionConfig(
-        name=request.name,
-        api_standard=APIStandard.POWER_MONITOR,
-        base_url=base_url,
-        api_key=request.api_key,
-        username=request.email,
-        password=request.password,
-        auth_type=request.auth_type,
-        sync_interval_minutes=request.sync_interval_minutes,
-        enabled=True,
-        building_id=request.building_id,
-        params=params,
-    )
-
-    manager = get_integration_manager()
-
-    try:
-        connector_id = manager.register_connector(config)
-        connector = manager.get_connector(connector_id)
-
-        return IntegrationResponse(
-            id=connector_id,
-            name=config.name,
-            api_standard=config.api_standard.value,
-            base_url=config.base_url,
-            auth_type=config.auth_type,
-            status=connector.status.value,
-            last_sync=None,
-            last_error=None,
-            enabled=config.enabled,
-            sync_interval_minutes=config.sync_interval_minutes,
-        )
-
-    except Exception as e:
-        logger.exception("Failed to create power monitor integration")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.get("/{integration_id}/live", response_model=list[LiveReadingResponse])
 async def get_live_readings(
     integration_id: str,
@@ -626,41 +664,3 @@ async def get_power_monitor_channels(
     except Exception as e:
         logger.exception("Failed to discover channels")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# Supported API standards info
-@router.get("/standards/info")
-async def get_supported_standards():
-    """Get information about supported API standards."""
-    return {
-        "standards": [
-            {
-                "id": "haystack",
-                "name": "Project Haystack",
-                "description": "Open source standard for semantic data models in smart buildings",
-                "auth_types": ["none", "basic", "bearer", "scram"],
-                "website": "https://project-haystack.org/",
-            },
-            {
-                "id": "greenbutton",
-                "name": "Green Button",
-                "description": "Standard for utility energy usage data (ESPI)",
-                "auth_types": ["bearer", "oauth2"],
-                "website": "https://www.greenbuttondata.org/",
-            },
-            {
-                "id": "weather",
-                "name": "Weather APIs",
-                "description": "External weather data (Open-Meteo, OpenWeatherMap, NOAA)",
-                "auth_types": ["none", "api_key"],
-                "providers": ["open_meteo", "openweathermap", "noaa"],
-            },
-            {
-                "id": "power_monitor",
-                "name": "Power Monitors",
-                "description": "Real-time energy monitoring devices (Emporia, IoTaWatt, Shelly, etc.)",
-                "auth_types": ["none", "api_key", "basic", "credentials"],
-                "providers": ["emporia", "iotawatt", "shelly", "home_assistant", "generic"],
-            },
-        ]
-    }
