@@ -10,6 +10,7 @@ A Graph Neural Network system for predictive power efficiency analysis in buildi
   - Project Haystack (smart building semantic data)
   - Green Button (utility energy usage data)
   - Weather APIs (Open-Meteo, OpenWeatherMap, NOAA)
+  - Power Monitors (Emporia, IoTaWatt, Shelly, Home Assistant)
 - **Address-Based Weather**: Automatic geocoding of building addresses for weather data
 - **Multi-Tenant Architecture**: Secure isolation between organizations
 - **Web Interface**: Modern UI for managing buildings, data, and integrations
@@ -100,7 +101,13 @@ The server will start at http://127.0.0.1:8082
 | `/api/v1/buildings` | GET/POST | List/create buildings |
 | `/api/v1/buildings/{id}/upload` | POST | Upload building data |
 | `/api/v1/integrations` | GET/POST | List/create integrations |
+| `/api/v1/integrations/weather` | POST | Create weather integration |
+| `/api/v1/integrations/power-monitor` | POST | Create power monitor integration |
+| `/api/v1/integrations/{id}/test` | POST | Test integration connection |
 | `/api/v1/integrations/{id}/sync` | POST | Sync integration data |
+| `/api/v1/integrations/{id}/live` | GET | Get live power readings |
+| `/api/v1/integrations/{id}/devices` | GET | Discover power monitor devices |
+| `/api/v1/integrations/{id}/channels` | GET | Get monitoring channels |
 | `/api/v1/predict/{building_id}` | POST | Get predictions |
 
 ### Data Upload Formats
@@ -163,6 +170,74 @@ Connect to Haystack-compatible building automation systems:
 ### Green Button
 
 Import utility energy usage data via the ESPI standard.
+
+### Power Monitors
+
+Connect to real-time energy monitoring devices for live power consumption data.
+
+#### Supported Devices
+
+| Provider | Type | Authentication | Features |
+|----------|------|----------------|----------|
+| **Emporia Vue** | Cloud | Email/password | Whole-home monitoring, circuit-level data, solar tracking |
+| **IoTaWatt** | Local | None/optional | Open-source, up to 14 circuits, local storage |
+| **Shelly EM** | Local | None | WiFi energy meter, 2 channels, contactor control |
+| **Home Assistant** | Local/Cloud | Bearer token | Aggregates any HA energy sensor |
+| **Generic REST** | Any | Configurable | Custom API endpoints and data mapping |
+
+#### Emporia Setup
+
+```json
+{
+  "name": "Home Energy Monitor",
+  "provider": "emporia",
+  "email": "your@email.com",
+  "password": "your-password",
+  "sync_interval_minutes": 5
+}
+```
+
+#### Local Device Setup (IoTaWatt/Shelly)
+
+```json
+{
+  "name": "IoTaWatt Monitor",
+  "provider": "iotawatt",
+  "base_url": "http://192.168.1.100",
+  "sync_interval_minutes": 1
+}
+```
+
+#### Home Assistant Setup
+
+```json
+{
+  "name": "Home Assistant Energy",
+  "provider": "home_assistant",
+  "base_url": "http://homeassistant.local:8123",
+  "api_key": "your-long-lived-access-token",
+  "sync_interval_minutes": 5
+}
+```
+
+#### Live Readings API
+
+Get real-time power consumption:
+
+```bash
+GET /api/v1/integrations/{id}/live
+
+# Response
+[
+  {
+    "channel_id": "device_1",
+    "channel_name": "Main Panel",
+    "watts": 3245.5,
+    "voltage": 121.2,
+    "timestamp": "2024-01-15T10:30:00Z"
+  }
+]
+```
 
 ## Project Structure
 
