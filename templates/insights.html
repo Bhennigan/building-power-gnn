@@ -53,11 +53,21 @@
             {% endif %}
         </div>
         {% else %}
-        <div class="flex items-center justify-between">
-            <p class="text-gray-500">No trained model yet. Train a model on your building data to unlock predictions.</p>
-            <a href="/upload" class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
-                Train Model
-            </a>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <p class="text-gray-500">No trained model yet. Select a building and train a model to unlock predictions.</p>
+            <div class="flex items-center gap-3">
+                <select id="buildingSelect" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                    {% for b in buildings %}
+                    <option value="{{ b.id }}" data-nodes="{{ b.node_count or 0 }}">{{ b.name }} ({{ b.node_count or 0 }} nodes)</option>
+                    {% endfor %}
+                </select>
+                <button id="trainBtn" onclick="trainModel()" class="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700 disabled:bg-gray-400">
+                    <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    Train Model
+                </button>
+            </div>
         </div>
         {% endif %}
     </div>
@@ -173,6 +183,55 @@
 
 {% block scripts %}
 <script>
+async function trainModel() {
+    const select = document.getElementById('buildingSelect');
+    const btn = document.getElementById('trainBtn');
+
+    if (!select) {
+        alert('No buildings available');
+        return;
+    }
+
+    const buildingId = select.value;
+    const selectedOption = select.options[select.selectedIndex];
+    const nodeCount = parseInt(selectedOption.dataset.nodes || 0);
+
+    if (nodeCount < 2) {
+        alert('This building needs at least 2 nodes to train a model. Please upload data first.');
+        return;
+    }
+
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Training...';
+
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/v1/buildings/${buildingId}/train`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('Training started! Model ID: ' + data.model_id + '\n\nThe page will refresh to show progress.');
+            window.location.reload();
+        } else {
+            alert('Training failed: ' + (data.detail || 'Unknown error'));
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
 {% if model and model.status == 'ready' %}
 // Generate mock forecast data for demo
 const ctx = document.getElementById('forecastChart').getContext('2d');

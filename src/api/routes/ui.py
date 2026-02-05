@@ -184,6 +184,12 @@ async def insights_page(
     """Insights page."""
     buildings = crud.get_buildings(db, user.tenant_id)
 
+    # Add node counts to buildings for the training selector
+    for building in buildings:
+        stats = crud.get_building_stats(db, building.id)
+        building.node_count = stats["total_nodes"]
+        building.edge_count = stats["total_edges"]
+
     # Get latest model status
     model = crud.get_latest_model(db, user.tenant_id)
 

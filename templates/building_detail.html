@@ -30,10 +30,18 @@
             </p>
         </div>
         <div class="mt-4 flex md:ml-4 md:mt-0 space-x-3">
+            {% if stats.total_nodes >= 2 %}
+            <button id="trainBtn" onclick="trainModel('{{ building.id }}')" class="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
+                <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                Train Model
+            </button>
+            {% endif %}
             <a href="/upload?building={{ building.id }}" class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
                 Upload Data
             </a>
-            <button x-data @click="if(confirm('Delete this building?')) window.location='/api/v1/buildings/{{ building.id }}/delete'" class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700">
+            <button onclick="if(confirm('Delete this building?')) deleteBuilding('{{ building.id }}')" class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700">
                 Delete
             </button>
         </div>
@@ -225,4 +233,62 @@
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function trainModel(buildingId) {
+    const btn = document.getElementById('trainBtn');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Training...';
+
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/v1/buildings/${buildingId}/train`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('Training started! Model ID: ' + data.model_id + '\n\nCheck the Insights page for results.');
+            window.location.href = '/insights';
+        } else {
+            alert('Training failed: ' + (data.detail || 'Unknown error'));
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+async function deleteBuilding(buildingId) {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/v1/buildings/${buildingId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            window.location.href = '/buildings';
+        } else {
+            const data = await response.json();
+            alert('Delete failed: ' + (data.detail || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+</script>
 {% endblock %}
